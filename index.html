@@ -12,6 +12,8 @@ body {
   color: white;
 }
 
+h1 { margin-top: 10px; }
+
 #codigoSala {
   font-size: 28px;
   color: yellow;
@@ -40,6 +42,11 @@ body {
 input, button, select {
   padding: 10px;
   margin: 5px;
+}
+
+#ranking {
+  list-style: none;
+  padding: 0;
 }
 </style>
 </head>
@@ -80,6 +87,7 @@ input, button, select {
 <input id="respuesta" placeholder="Respuesta">
 <button onclick="responder()">Responder</button>
 
+<h2>🏆 Ranking</h2>
 <ul id="ranking"></ul>
 
 <script type="module">
@@ -88,11 +96,12 @@ import {
   getDatabase, ref, set, update, onValue, get
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+// 🔥 CONFIG FIREBASE (TUYA)
 const firebaseConfig = {
   apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
   authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
   databaseURL: "https://olimpiadas-gradoolimpicas-default-rtdb.firebaseio.com",
-  projectId: "olimpiadas-gradoolimpicas",
+  projectId: "olimpiadas-gradoolimpicas"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -101,75 +110,101 @@ const db = getDatabase(app);
 let sala = null;
 let jugador = null;
 
-// 🎲 código
+// 🎲 generar código
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🧠 pregunta
+// 🧠 generar pregunta
 function generarPregunta() {
-  let g = Math.floor(Math.random() * 50);
-  let m = Math.floor(Math.random() * 60);
-
-  return {
-    texto: `${g}° ${m}' → decimal`,
-    respuesta: (g + m / 60).toFixed(2)
-  };
+  if (Math.random() > 0.5) {
+    let g = Math.floor(Math.random() * 50);
+    let m = Math.floor(Math.random() * 60);
+    return {
+      texto: `${g}° ${m}' → decimal`,
+      respuesta: (g + m / 60).toFixed(2)
+    };
+  } else {
+    let val = (Math.random() * 50).toFixed(2);
+    let min = Math.round((val % 1) * 60);
+    return {
+      texto: `${val}° → grados y minutos (ej: 12 30)`,
+      respuesta: `${Math.floor(val)} ${min}`
+    };
+  }
 }
 
 // 🏁 crear sala
 window.crearSala = async () => {
-  const code = generarCodigo();
+  try {
+    const code = generarCodigo();
 
-  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
+    document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
-  await set(ref(db, "salas/" + code), {
-    jugadores: {},
-    pregunta: generarPregunta()
-  });
+    await set(ref(db, "salas/" + code), {
+      jugadores: {
+        0: null,
+        1: null,
+        2: null,
+        3: null
+      },
+      pregunta: generarPregunta()
+    });
 
-  sala = code;
-  escuchar();
+    sala = code;
+    escuchar();
+
+  } catch (e) {
+    console.error(e);
+    alert("Error creando sala");
+  }
 };
 
 // 👥 unirse
 window.unirseSala = async () => {
-  const code = document.getElementById("codigo").value.toUpperCase();
-  const nombre = document.getElementById("name").value;
-  const grupo = document.getElementById("grupo").value;
+  try {
+    const code = document.getElementById("codigo").value.toUpperCase();
+    const nombre = document.getElementById("name").value;
+    const grupo = document.getElementById("grupo").value;
 
-  if (!nombre) return alert("Pon nombre");
+    if (!nombre) return alert("Pon nombre");
 
-  const salaRef = ref(db, "salas/" + code);
-  const snap = await get(salaRef);
+    const salaRef = ref(db, "salas/" + code);
+    const snap = await get(salaRef);
 
-  if (!snap.exists()) return alert("Sala no existe");
+    if (!snap.exists()) return alert("Sala no existe");
 
-  const data = snap.val();
+    const data = snap.val();
+    const jugadores = data.jugadores || {};
 
-  if (!data.jugadores) data.jugadores = {};
+    // 🔥 CORREGIDO: evita falso "ocupado"
+    if (jugadores[grupo] && jugadores[grupo].nombre) {
+      return alert("Grupo ocupado");
+    }
 
-  if (data.jugadores[grupo]) return alert("Grupo ocupado");
+    await update(ref(db, `salas/${code}/jugadores/${grupo}`), {
+      nombre,
+      pos: 0
+    });
 
-  await update(ref(db, `salas/${code}/jugadores/${grupo}`), {
-    nombre,
-    pos: 0
-  });
+    sala = code;
+    jugador = grupo;
 
-  sala = code;
-  jugador = grupo;
+    document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
-  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
+    escuchar();
 
-  escuchar();
+  } catch (e) {
+    console.error(e);
+    alert("Error al unirse");
+  }
 };
 
-// 👂 escuchar
+// 👂 escuchar cambios
 function escuchar() {
   onValue(ref(db, "salas/" + sala), snap => {
     const data = snap.val();
     if (!data) return;
-
     render(data);
   });
 }
@@ -195,26 +230,31 @@ function render(data) {
 
 // 🎯 responder
 window.responder = async () => {
-  const val = document.getElementById("respuesta").value;
+  try {
+    const val = document.getElementById("respuesta").value;
 
-  const salaRef = ref(db, "salas/" + sala);
-  const snap = await get(salaRef);
+    const salaRef = ref(db, "salas/" + sala);
+    const snap = await get(salaRef);
+    const data = snap.val();
 
-  const data = snap.val();
+    const correcto = val == data.pregunta.respuesta;
 
-  const correcto = val == data.pregunta.respuesta;
+    const jugadorRef = ref(db, `salas/${sala}/jugadores/${jugador}`);
+    const snapJugador = await get(jugadorRef);
 
-  const jugadorRef = ref(db, `salas/${sala}/jugadores/${jugador}`);
-  const snapJugador = await get(jugadorRef);
+    let pos = snapJugador.val().pos;
+    pos = correcto ? pos + 1 : pos - 1;
 
-  let pos = snapJugador.val().pos;
-  pos = correcto ? pos + 1 : pos - 1;
+    await update(jugadorRef, { pos });
 
-  await update(jugadorRef, { pos });
+    // 🔥 nueva pregunta para todos
+    await update(salaRef, {
+      pregunta: generarPregunta()
+    });
 
-  await update(salaRef, {
-    pregunta: generarPregunta()
-  });
+  } catch (e) {
+    console.error(e);
+  }
 };
 </script>
 
