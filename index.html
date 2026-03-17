@@ -3,20 +3,26 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Camel Race Online</title>
+<title>🐪 Carrera de Camellos - Clase</title>
 
 <style>
 body {
   font-family: Arial;
   text-align: center;
-  background: linear-gradient(#1e1e2f, #0d0d1a);
+  background: #0d0d1a;
   color: white;
 }
 
+#codigoSala {
+  font-size: 30px;
+  color: yellow;
+  margin: 10px;
+}
+
 #pista {
-  margin: 20px;
   height: 220px;
   border: 2px solid white;
+  margin: 20px;
   position: relative;
 }
 
@@ -36,37 +42,32 @@ input, button, select {
   padding: 10px;
   margin: 5px;
 }
-
-#codigoSala {
-  font-size: 20px;
-  color: yellow;
-}
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Camel Race Online</h1>
+<h1>🐪 Carrera de Camellos (Clase)</h1>
 
-<div>
-  <input id="name" placeholder="Tu nombre">
+<input id="name" placeholder="Nombre">
 
-  <select id="grupo">
-    <option value="0">Grupo 1</option>
-    <option value="1">Grupo 2</option>
-    <option value="2">Grupo 3</option>
-    <option value="3">Grupo 4</option>
-  </select>
+<select id="grupo">
+  <option value="0">Grupo 1</option>
+  <option value="1">Grupo 2</option>
+  <option value="2">Grupo 3</option>
+  <option value="3">Grupo 4</option>
+</select>
 
-  <br>
+<br>
 
-  <button onclick="crearSala()">Crear sala</button>
+<button onclick="crearSala()">👨‍🏫 Crear clase</button>
 
-  <input id="codigo" placeholder="Código">
-  <button onclick="unirseSala()">Unirse</button>
+<br>
 
-  <div id="codigoSala"></div>
-</div>
+<input id="codigo" placeholder="Código clase">
+<button onclick="unirseSala()">Unirse</button>
+
+<div id="codigoSala"></div>
 
 <h2 id="pregunta"></h2>
 
@@ -77,10 +78,8 @@ input, button, select {
   <div class="camello" id="c3">🐪</div>
 </div>
 
-<div>
-  <input id="respuesta" placeholder="Respuesta">
-  <button onclick="responder()">OK</button>
-</div>
+<input id="respuesta" placeholder="Respuesta">
+<button onclick="responder()">Responder</button>
 
 <ul id="ranking"></ul>
 
@@ -105,35 +104,31 @@ const db = getDatabase(app);
 let sala = null;
 let jugador = null;
 
-// 🎲 generar código
-function codigoRandom() {
+// 🔥 generar código fiable
+function generarCodigo() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🏁 crear sala
+// 👨‍🏫 crear clase
 window.crearSala = async () => {
-  const nombre = document.getElementById("name").value;
-  const grupo = document.getElementById("grupo").value;
+  const nombre = document.getElementById("name").value || "PROFESOR";
 
-  if (!nombre) return alert("Pon nombre");
-
-  const code = codigoRandom();
+  const code = generarCodigo();
 
   await set(ref(db, "salas/" + code), {
-    jugadores: {
-      [grupo]: { nombre, pos: 0 }
-    }
+    jugadores: {},
+    pregunta: generarPregunta()
   });
 
   sala = code;
-  jugador = grupo;
 
-  document.getElementById("codigoSala").innerText = "Código: " + code;
+  // 🔥 FORZAR mostrar código
+  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
   escuchar();
 };
 
-// 👥 unirse
+// 👨‍🎓 unirse
 window.unirseSala = async () => {
   const code = document.getElementById("codigo").value.toUpperCase();
   const nombre = document.getElementById("name").value;
@@ -141,13 +136,13 @@ window.unirseSala = async () => {
 
   const snap = await get(ref(db, "salas/" + code));
 
-  if (!snap.exists()) return alert("No existe sala");
+  if (!snap.exists()) return alert("Sala no existe");
 
   const jugadores = snap.val().jugadores || {};
 
   if (jugadores[grupo]) return alert("Grupo ocupado");
 
-  await update(ref(db, "salas/" + code + "/jugadores/" + grupo), {
+  await update(ref(db, `salas/${code}/jugadores/${grupo}`), {
     nombre,
     pos: 0
   });
@@ -155,12 +150,12 @@ window.unirseSala = async () => {
   sala = code;
   jugador = grupo;
 
-  document.getElementById("codigoSala").innerText = "Código: " + code;
+  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
   escuchar();
 };
 
-// 👂 escuchar
+// 👂 escuchar en directo
 function escuchar() {
   onValue(ref(db, "salas/" + sala), snap => {
     const data = snap.val();
@@ -168,7 +163,7 @@ function escuchar() {
   });
 }
 
-// 🧠 preguntas
+// 🧠 pregunta global (IMPORTANTE 🔥)
 function generarPregunta() {
   let g = Math.floor(Math.random() * 50);
   let m = Math.floor(Math.random() * 60);
@@ -179,10 +174,9 @@ function generarPregunta() {
   };
 }
 
-let pregunta = generarPregunta();
-
+// 🎨 render
 function render(data) {
-  document.getElementById("pregunta").innerText = pregunta.texto;
+  document.getElementById("pregunta").innerText = data.pregunta.texto;
 
   const ranking = document.getElementById("ranking");
   ranking.innerHTML = "";
@@ -199,21 +193,28 @@ function render(data) {
   }
 }
 
-// 🎯 responder
+// 🎯 responder (actualiza TODO)
 window.responder = async () => {
   const val = document.getElementById("respuesta").value;
 
-  const correcto = val == pregunta.respuesta;
+  const salaRef = ref(db, "salas/" + sala);
+  const snap = await get(salaRef);
 
-  const refJugador = ref(db, `salas/${sala}/jugadores/${jugador}`);
-  const snap = await get(refJugador);
+  const data = snap.val();
+  const correcto = val == data.pregunta.respuesta;
 
-  let pos = snap.val().pos;
+  const jugadorRef = ref(db, `salas/${sala}/jugadores/${jugador}`);
+  const snapJugador = await get(jugadorRef);
+
+  let pos = snapJugador.val().pos;
   pos = correcto ? pos + 1 : pos - 1;
 
-  await update(refJugador, { pos });
+  await update(jugadorRef, { pos });
 
-  pregunta = generarPregunta();
+  // 🔥 nueva pregunta para TODOS
+  await update(salaRef, {
+    pregunta: generarPregunta()
+  });
 };
 </script>
 
