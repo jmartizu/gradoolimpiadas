@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -47,29 +48,30 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 
 button:disabled {
   background: gray;
+  cursor: not-allowed;
 }
 </style>
 </head>
 
 <body>
 
-<div id="menu" class="activa">
+<div id="menu" class="pantalla activa">
   <h1>🎮 Selecciona juego</h1>
   <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
   <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
   <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
 </div>
 
-<div id="juego">
+<div id="juego" class="pantalla">
 
 <h1 id="titulo"></h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
-<option value="0">Grupo 1</option>
-<option value="1">Grupo 2</option>
-<option value="2">Grupo 3</option>
-<option value="3">Grupo 4</option>
+  <option value="0">Grupo 1</option>
+  <option value="1">Grupo 2</option>
+  <option value="2">Grupo 3</option>
+  <option value="3">Grupo 4</option>
 </select>
 
 <br>
@@ -84,7 +86,9 @@ button:disabled {
 
 <h3 id="mensajeUnion"></h3>
 
-<button onclick="empezar()">🚀 Empezar</button>
+<br><br>
+
+<button onclick="empezar()">🚀 Empezar carrera</button>
 
 <h2 id="pregunta"></h2>
 <h3 id="timer"></h3>
@@ -96,14 +100,14 @@ button:disabled {
 <h2 id="ganador"></h2>
 
 <div id="pista">
-<div class="meta"></div>
-<div id="c0" class="personaje"></div>
-<div id="c1" class="personaje"></div>
-<div id="c2" class="personaje"></div>
-<div id="c3" class="personaje"></div>
+  <div class="meta"></div>
+  <div id="c0" class="personaje"></div>
+  <div id="c1" class="personaje"></div>
+  <div id="c2" class="personaje"></div>
+  <div id="c3" class="personaje"></div>
 </div>
 
-<h2>🏆 Ranking</h2>
+<h2>🏆 Ranking global</h2>
 <div id="ranking"></div>
 
 </div>
@@ -113,169 +117,250 @@ button:disabled {
 
 <script>
 const firebaseConfig = {
-apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
-authDomain: "camellos-dcf0d.firebaseapp.com",
-databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
-projectId: "camellos-dcf0d"
+  apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
+  authDomain: "camellos-dcf0d.firebaseapp.com",
+  databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "camellos-dcf0d"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+let modo="camellos";
 let sala=null, grupo=null;
 let META=20;
-let intervalo, tiempo=40, respondido=false;
+let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
 
+// modo
 function iniciarModo(m){
-document.getElementById("menu").style.display="none";
-document.getElementById("juego").style.display="block";
+  modo=m;
+  document.getElementById("menu").classList.remove("activa");
+  document.getElementById("juego").classList.add("activa");
 
-let icono = m==="camellos"?"🐫➡️":m==="atletismo"?"🏃":"🐎";
-
-for(let i=0;i<4;i++){
-document.getElementById("c"+i).innerText=icono;
+  if(m==="camellos"){
+    document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
+    poner("🐫➡️");
+    document.getElementById("pista").style.background="#222";
+  } else if(m==="atletismo"){
+    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
+    poner("🏃‍♂️➡️");
+    document.getElementById("pista").style.background="#8B4513";
+  } else {
+    document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
+    poner("🐎➡️");
+    document.getElementById("pista").style.background="#3a3a3a";
+  }
 }
+
+function poner(icono){
+  for(let i=0;i<4;i++){
+    document.getElementById("c"+i).innerText=icono;
+  }
 }
 
-// preguntas
+// 🔥 AQUÍ ESTÁ EL CAMBIO
 function nuevaPregunta(){
-let tipo=Math.floor(Math.random()*3);
+  let g=Math.floor(Math.random()*361); // ← 0 a 360
+  let m=Math.floor(Math.random()*60);
 
-let g=Math.floor(Math.random()*361);
-let m=Math.floor(Math.random()*60);
-
-if(tipo===0){
-return {texto:`${g}° ${m}' → minutos`,respuesta:g*60+m,tipo:"min"};
-}
-if(tipo===1){
-return {texto:`${g}° ${m}' → grados`,respuesta:g+(m/60),tipo:"deg"};
-}
-
-// decimal
-let dec=(Math.random()*360).toFixed(2);
-let gr=Math.floor(dec);
-let mi=Math.round((dec-gr)*60);
-
-return {texto:`${dec}° → grados minutos`,respuesta:gr+" "+mi,tipo:"conv"};
+  if(Math.random()>0.5){
+    return {
+      texto:`${g}° ${m}' → minutos`,
+      respuesta:g*60+m,
+      tipo:"minutos"
+    };
+  } else {
+    return {
+      texto:`${g}° ${m}' → grados`,
+      respuesta:g+(m/60),
+      tipo:"grados"
+    };
+  }
 }
 
 // crear sala
 function crearSala(){
-sala=Math.random().toString(36).substring(2,6).toUpperCase();
-grupo=document.getElementById("grupo").value;
+  if(sala !== null) return;
 
-document.getElementById("codigoSala").innerText=sala;
-document.getElementById("btnCrear").disabled=true;
+  sala=Math.random().toString(36).substring(2,6).toUpperCase();
+  grupo=document.getElementById("grupo").value;
 
-db.ref("salas/"+sala).set({
-jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
-empezado:false,
-terminado:false
-});
+  document.getElementById("codigoSala").innerText=sala;
+  document.getElementById("btnCrear").disabled = true;
 
-escuchar();
+  db.ref("salas/"+sala).set({
+    jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
+    empezado:false,
+    terminado:false
+  });
+
+  escuchar();
 }
 
 // unirse
 function unirse(){
-sala=document.getElementById("codigo").value.toUpperCase();
-grupo=document.getElementById("grupo").value;
-let nombre=document.getElementById("nombre").value;
+  sala=document.getElementById("codigo").value.toUpperCase();
+  grupo=document.getElementById("grupo").value;
+  let nombre=document.getElementById("nombre").value;
 
-document.getElementById("mensajeUnion").innerText=
-nombre+" unido al grupo "+(parseInt(grupo)+1);
+  if(nombre===""){ alert("Escribe tu nombre"); return; }
+  if(sala===""){ alert("Escribe el código"); return; }
 
-escuchar();
-}
+  document.getElementById("mensajeUnion").innerText =
+    nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
 
-// escuchar
-function escuchar(){
-db.ref("salas/"+sala).on("value",snap=>{
-let d=snap.val(); if(!d)return;
-
-for(let i=0;i<4;i++){
-let x=(d.jugadores[i].pos/META)*100;
-document.getElementById("c"+i).style.left=x+"%";
-}
-
-if(d.empezado && !intervalo){
-nuevaRonda();
-}
-
-if(d.terminado){
-document.getElementById("ganador").innerText="🏆 FIN";
-clearInterval(intervalo);
-}
-});
+  escuchar();
 }
 
 // empezar
 function empezar(){
-db.ref("salas/"+sala).update({empezado:true});
+  db.ref("salas/"+sala).update({empezado:true});
+}
+
+// escuchar
+function escuchar(){
+  db.ref("salas/"+sala).on("value",snap=>{
+    const d=snap.val(); if(!d)return;
+
+    for(let i=0;i<4;i++){
+      let x=(d.jugadores[i].pos/META)*100;
+      document.getElementById("c"+i).style.left=x+"%";
+    }
+
+    if(d.empezado && !intervalo){
+      nuevaRonda();
+    }
+
+    if(d.terminado){
+      mostrarGanador();
+      clearInterval(intervalo);
+    }
+  });
+
+  escucharRanking();
 }
 
 // ronda
 function nuevaRonda(){
-preguntaActual=nuevaPregunta();
-document.getElementById("pregunta").innerText=preguntaActual.texto;
-iniciarTimer();
+  preguntaActual=nuevaPregunta();
+  document.getElementById("pregunta").innerText=preguntaActual.texto;
+  iniciarTimer();
 }
 
 // timer
 function iniciarTimer(){
-clearInterval(intervalo);
-tiempo=40;
-respondido=false;
+  clearInterval(intervalo);
+  tiempo=40;
+  respondido=false;
+  document.getElementById("resultado").innerText="";
 
-intervalo=setInterval(()=>{
-document.getElementById("timer").innerText=tiempo;
-tiempo--;
-if(tiempo<0) nuevaRonda();
-},1000);
+  intervalo=setInterval(()=>{
+    document.getElementById("timer").innerText="Tiempo: "+tiempo;
+    tiempo--;
+    if(tiempo<0) nuevaRonda();
+  },1000);
 }
 
 // responder
 function responder(){
-let val=document.getElementById("respuesta").value.trim();
-if(val===""||respondido)return;
-respondido=true;
+  let val=document.getElementById("respuesta").value.trim();
+  if(val===""||respondido)return;
+  respondido=true;
 
-val=val.replace(",",".");
-let correcto=false;
+  val = val.replace(",", ".");
 
-if(preguntaActual.tipo==="min"){
-correcto=Number(val)===preguntaActual.respuesta;
+  let correcto=false;
+
+  if(preguntaActual.tipo==="minutos"){
+    correcto = Number(val) === preguntaActual.respuesta;
+  }else{
+    correcto = Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
+  }
+
+  let solucion = preguntaActual.tipo==="grados"
+    ? preguntaActual.respuesta.toFixed(2)
+    : preguntaActual.respuesta;
+
+  document.getElementById("resultado").innerText =
+    correcto ? "✅ Correcto" : "❌ Incorrecto → Correcto: " + solucion;
+
+  db.ref("salas/"+sala).once("value").then(snap=>{
+    let d=snap.val();
+    let pos=d.jugadores[grupo].pos;
+
+    if(correcto){
+      pos++;
+    }else{
+      pos--;
+      if(pos<0) pos=0;
+    }
+
+    if(pos>=META){
+      db.ref("salas/"+sala).update({
+        terminado:true,
+        posiciones:ordenar(d.jugadores)
+      });
+      asignarPuntos(d.jugadores);
+    }
+
+    db.ref(`salas/${sala}/jugadores/${grupo}`).update({pos});
+  });
+
+  document.getElementById("respuesta").value="";
+  setTimeout(()=>nuevaRonda(),500);
 }
-else if(preguntaActual.tipo==="deg"){
-correcto=Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
-}
-else{
-correcto=val===preguntaActual.respuesta;
-}
 
-document.getElementById("resultado").innerText=
-correcto?"✅":"❌ "+preguntaActual.respuesta;
-
-db.ref("salas/"+sala).once("value").then(snap=>{
-let d=snap.val();
-let pos=d.jugadores[grupo].pos;
-
-if(correcto) pos++;
-else {pos--; if(pos<0)pos=0;}
-
-if(pos>=META){
-db.ref("salas/"+sala).update({terminado:true});
+// ordenar
+function ordenar(j){
+  return Object.entries(j)
+    .sort((a,b)=>b[1].pos-a[1].pos)
+    .map(e=>e[0]);
 }
 
-db.ref("salas/"+sala+"/jugadores/"+grupo).update({pos});
+// puntos
+function asignarPuntos(j){
+  let orden=ordenar(j);
+  let pts=[5,3,1];
+
+  orden.forEach((g,i)=>{
+    if(i<3){
+      db.ref("ranking/"+g).transaction(p=>(p||0)+pts[i]);
+    }
+  });
+}
+
+// ganador
+function mostrarGanador(){
+  db.ref("salas/"+sala+"/posiciones").once("value").then(snap=>{
+    let orden=snap.val();
+
+    document.getElementById("ganador").innerText =
+      "🏆 GANA GRUPO "+(parseInt(orden[0])+1);
+
+    document.getElementById("btnCrear").disabled = false;
+    sala = null;
+  });
+}
+
+// ranking
+function escucharRanking(){
+  db.ref("ranking").on("value",snap=>{
+    let r=snap.val()||{};
+    let html="";
+    for(let i=0;i<4;i++){
+      html += `Grupo ${i+1}: ${r[i]||0} puntos<br>`;
+    }
+    document.getElementById("ranking").innerHTML=html;
+  });
+}
+
+// enter
+document.getElementById("respuesta").addEventListener("keypress",e=>{
+  if(e.key==="Enter") responder();
 });
-
-document.getElementById("respuesta").value="";
-setTimeout(nuevaRonda,500);
-}
 </script>
 
 </body>
 </html>
-
+```
