@@ -84,6 +84,88 @@ button:disabled {
 <button onclick="unirse()">Unirse</button>
 
 <h3 id="mensajeUnion"></h3>
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🎮 Juegos de Carrera</title>
+
+<style>
+body { font-family: Arial; background:#111; color:white; text-align:center; }
+
+.pantalla { display:none; }
+.activa { display:block; }
+
+#pista {
+  width:90%;
+  height:260px;
+  margin:20px auto;
+  border:2px solid white;
+  position:relative;
+}
+
+.meta {
+  position:absolute;
+  right:0;
+  width:20px;
+  height:100%;
+  background: repeating-linear-gradient(
+    0deg, white 0px, white 10px, black 10px, black 20px
+  );
+}
+
+.personaje {
+  position:absolute;
+  font-size:32px;
+  transition:0.4s linear;
+}
+
+#c0 { top:10%; }
+#c1 { top:35%; }
+#c2 { top:60%; }
+#c3 { top:85%; }
+
+#mensajeUnion {
+  margin-top:10px;
+  font-size:18px;
+  color: lightgreen;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu" class="pantalla activa">
+  <h1>🎮 Selecciona juego</h1>
+  <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
+  <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
+  <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
+</div>
+
+<div id="juego" class="pantalla">
+
+<h1 id="titulo"></h1>
+
+<input id="nombre" placeholder="Nombre">
+<select id="grupo">
+  <option value="0">Grupo 1</option>
+  <option value="1">Grupo 2</option>
+  <option value="2">Grupo 3</option>
+  <option value="3">Grupo 4</option>
+</select>
+
+<br>
+
+<button id="btnCrear" onclick="crearSala()">Crear sala</button>
+<div id="codigoSala"></div>
+
+<hr>
+
+<input id="codigo" placeholder="Código">
+<button onclick="unirse()">Unirse</button>
+
+<h3 id="mensajeUnion"></h3>
 
 <br><br>
 
@@ -93,7 +175,7 @@ button:disabled {
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
-<input id="respuesta">
+<input id="respuesta" placeholder="Respuesta">
 <button onclick="responder()">Responder</button>
 
 <h2 id="ganador"></h2>
@@ -140,15 +222,12 @@ function iniciarModo(m){
   if(m==="camellos"){
     document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
     poner("🐫➡️");
-    document.getElementById("pista").style.background="#222";
   } else if(m==="atletismo"){
-    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
+    document.getElementById("titulo").innerText="🏃 Atletismo";
     poner("🏃‍♂️➡️");
-    document.getElementById("pista").style.background="#8B4513";
   } else {
-    document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
+    document.getElementById("titulo").innerText="🐎 Caballos";
     poner("🐎➡️");
-    document.getElementById("pista").style.background="#3a3a3a";
   }
 }
 
@@ -158,110 +237,43 @@ function poner(icono){
   }
 }
 
-// preguntas
+// 🔥 NUEVA GENERACIÓN DE PREGUNTAS
 function nuevaPregunta(){
-  let g=Math.floor(Math.random()*50);
+  let tipo=Math.floor(Math.random()*3);
+
+  let g=Math.floor(Math.random()*361);
   let m=Math.floor(Math.random()*60);
 
-  if(Math.random()>0.5){
+  if(tipo===0){
     return {
       texto:`${g}° ${m}' → minutos`,
       respuesta:g*60+m,
       tipo:"minutos"
     };
-  } else {
+  }
+
+  if(tipo===1){
     return {
       texto:`${g}° ${m}' → grados`,
       respuesta:g+(m/60),
       tipo:"grados"
     };
   }
+
+  // ⭐ decimal → grados minutos
+  let decimal=(Math.random()*360).toFixed(2);
+  let grados=Math.floor(decimal);
+  let minutos=Math.round((decimal-grados)*60);
+
+  return {
+    texto:`${decimal}° → grados y minutos`,
+    respuesta: grados + " " + minutos,
+    tipo:"convertir"
+  };
 }
 
-// crear sala
-function crearSala(){
-  if(sala !== null) return;
+// resto igual excepto responder
 
-  sala=Math.random().toString(36).substring(2,6).toUpperCase();
-  grupo=document.getElementById("grupo").value;
-
-  document.getElementById("codigoSala").innerText=sala;
-  document.getElementById("btnCrear").disabled = true;
-
-  db.ref("salas/"+sala).set({
-    jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
-    empezado:false,
-    terminado:false
-  });
-
-  escuchar();
-}
-
-// unirse
-function unirse(){
-  sala=document.getElementById("codigo").value.toUpperCase();
-  grupo=document.getElementById("grupo").value;
-  let nombre=document.getElementById("nombre").value;
-
-  if(nombre===""){ alert("Escribe tu nombre"); return; }
-  if(sala===""){ alert("Escribe el código"); return; }
-
-  document.getElementById("mensajeUnion").innerText =
-    nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
-
-  escuchar();
-}
-
-// empezar
-function empezar(){
-  db.ref("salas/"+sala).update({empezado:true});
-}
-
-// escuchar
-function escuchar(){
-  db.ref("salas/"+sala).on("value",snap=>{
-    const d=snap.val(); if(!d)return;
-
-    for(let i=0;i<4;i++){
-      let x=(d.jugadores[i].pos/META)*100;
-      document.getElementById("c"+i).style.left=x+"%";
-    }
-
-    if(d.empezado && !intervalo){
-      nuevaRonda();
-    }
-
-    if(d.terminado){
-      mostrarGanador();
-      clearInterval(intervalo);
-    }
-  });
-
-  escucharRanking();
-}
-
-// ronda
-function nuevaRonda(){
-  preguntaActual=nuevaPregunta();
-  document.getElementById("pregunta").innerText=preguntaActual.texto;
-  iniciarTimer();
-}
-
-// timer
-function iniciarTimer(){
-  clearInterval(intervalo);
-  tiempo=40;
-  respondido=false;
-  document.getElementById("resultado").innerText="";
-
-  intervalo=setInterval(()=>{
-    document.getElementById("timer").innerText="Tiempo: "+tiempo;
-    tiempo--;
-    if(tiempo<0) nuevaRonda();
-  },1000);
-}
-
-// responder con solución
 function responder(){
   let val=document.getElementById("respuesta").value.trim();
   if(val===""||respondido)return;
@@ -270,30 +282,30 @@ function responder(){
   val = val.replace(",", ".");
 
   let correcto=false;
+  let solucion="";
 
   if(preguntaActual.tipo==="minutos"){
-    correcto = Number(val) === preguntaActual.respuesta;
-  }else{
+    correcto = Number(val)===preguntaActual.respuesta;
+    solucion=preguntaActual.respuesta;
+  }
+  else if(preguntaActual.tipo==="grados"){
     correcto = Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
+    solucion=preguntaActual.respuesta.toFixed(2);
+  }
+  else{
+    correcto = val===preguntaActual.respuesta;
+    solucion=preguntaActual.respuesta;
   }
 
-  let solucion = preguntaActual.tipo==="grados"
-    ? preguntaActual.respuesta.toFixed(2)
-    : preguntaActual.respuesta;
-
   document.getElementById("resultado").innerText =
-    correcto ? "✅ Correcto" : "❌ Incorrecto → Correcto: " + solucion;
+    correcto?"✅ Correcto":"❌ Incorrecto → "+solucion;
 
   db.ref("salas/"+sala).once("value").then(snap=>{
     let d=snap.val();
     let pos=d.jugadores[grupo].pos;
 
-    if(correcto){
-      pos++;
-    }else{
-      pos--;
-      if(pos<0) pos=0;
-    }
+    if(correcto){ pos++; }
+    else{ pos--; if(pos<0) pos=0; }
 
     if(pos>=META){
       db.ref("salas/"+sala).update({
@@ -309,62 +321,10 @@ function responder(){
   document.getElementById("respuesta").value="";
   setTimeout(()=>nuevaRonda(),500);
 }
-
-// ordenar
-function ordenar(j){
-  return Object.entries(j)
-    .sort((a,b)=>b[1].pos-a[1].pos)
-    .map(e=>e[0]);
-}
-
-// puntos
-function asignarPuntos(j){
-  let orden=ordenar(j);
-  let pts=[5,3,1];
-
-  orden.forEach((g,i)=>{
-    if(i<3){
-      db.ref("ranking/"+g).transaction(p=>(p||0)+pts[i]);
-    }
-  });
-}
-
-// ganador
-function mostrarGanador(){
-  db.ref("salas/"+sala+"/posiciones").once("value").then(snap=>{
-    let orden=snap.val();
-
-    document.getElementById("ganador").innerText =
-      "🏆 GANA GRUPO "+(parseInt(orden[0])+1);
-
-    document.getElementById("btnCrear").disabled = false;
-    sala = null;
-  });
-}
-
-// ranking
-function escucharRanking(){
-  db.ref("ranking").on("value",snap=>{
-    let r=snap.val()||{};
-    let html="";
-    for(let i=0;i<4;i++){
-      html += `Grupo ${i+1}: ${r[i]||0} puntos<br>`;
-    }
-    document.getElementById("ranking").innerHTML=html;
-  });
-}
-
-// enter
-document.getElementById("respuesta").addEventListener("keypress",e=>{
-  if(e.key==="Enter") responder();
-});
 </script>
 
 </body>
 </html>
-
-
-
 
 
 
