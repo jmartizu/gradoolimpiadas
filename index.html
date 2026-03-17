@@ -2,73 +2,50 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🎮 Juegos de Carrera</title>
+<title>🎮 Carrera de Camellos</title>
 
 <style>
 body { font-family: Arial; background:#111; color:white; text-align:center; }
 
-.pantalla { display:none; }
-.activa { display:block; }
-
 #pista {
-  width: 90%;
-  height: 260px;
-  margin: 20px auto;
-  border: 2px solid white;
-  position: relative;
-  background: #222;
+  width:90%;
+  height:260px;
+  margin:20px auto;
+  border:2px solid white;
+  position:relative;
 }
 
-/* 🏁 meta */
 .meta {
   position:absolute;
   right:0;
   width:20px;
   height:100%;
-  background:repeating-linear-gradient(
+  background: repeating-linear-gradient(
     0deg, white 0px, white 10px, black 10px, black 20px
   );
 }
 
-/* 🛣️ carriles */
-.carril {
-  position:absolute;
-  width:100%;
-  height:25%;
-  border-bottom:1px dashed gray;
-}
-
-/* 🐪🏃 personajes */
 .personaje {
   position:absolute;
-  left:0;
-  font-size:30px;
-  transition: transform 0.4s linear;
+  font-size:32px;
+  transition:0.4s linear;
 }
 
-/* posiciones */
-#c0 { top: 5%; }
-#c1 { top: 30%; }
-#c2 { top: 55%; }
-#c3 { top: 80%; }
+#c0 { top:10%; }
+#c1 { top:35%; }
+#c2 { top:60%; }
+#c3 { top:85%; }
 
-button { margin:5px; padding:10px; }
+#mensajeUnion {
+  color: lightgreen;
+  font-size:18px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- MENU -->
-<div id="menu" class="pantalla activa">
-  <h1>🎮 Selecciona juego</h1>
-  <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
-  <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
-</div>
-
-<!-- JUEGO -->
-<div id="juego" class="pantalla">
-
-<h1 id="titulo"></h1>
+<h1>🐪 Carrera de Camellos</h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
@@ -88,36 +65,32 @@ button { margin:5px; padding:10px; }
 <input id="codigo" placeholder="Código">
 <button onclick="unirse()">Unirse</button>
 
+<h3 id="mensajeUnion"></h3>
+
 <br><br>
 
-<button onclick="empezarCarrera()">🚀 Empezar carrera</button>
+<button onclick="empezar()">🚀 Empezar carrera</button>
 
-<h2 id="pregunta">Esperando...</h2>
+<h2 id="pregunta"></h2>
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
-<input id="respuesta" placeholder="Respuesta">
+<input id="respuesta">
 <button onclick="responder()">Responder</button>
 
 <h2 id="ganador"></h2>
 
 <div id="pista">
-
-  <div class="carril" style="top:0%"></div>
-  <div class="carril" style="top:25%"></div>
-  <div class="carril" style="top:50%"></div>
-  <div class="carril" style="top:75%"></div>
-
   <div class="meta"></div>
 
-  <div class="personaje" id="c0"></div>
-  <div class="personaje" id="c1"></div>
-  <div class="personaje" id="c2"></div>
-  <div class="personaje" id="c3"></div>
-
+  <div id="c0" class="personaje">🐫➡️</div>
+  <div id="c1" class="personaje">🐫➡️</div>
+  <div id="c2" class="personaje">🐫➡️</div>
+  <div id="c3" class="personaje">🐫➡️</div>
 </div>
 
-</div>
+<h2>🏆 Ranking global</h2>
+<div id="ranking"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -133,40 +106,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let modo="camellos";
 let sala=null, grupo=null;
-let META=20; // 🔥 ahora 20 aciertos
+let META=20;
 let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
-
-// 🎮 modo
-function iniciarModo(m){
-  modo=m;
-  document.getElementById("menu").classList.remove("activa");
-  document.getElementById("juego").classList.add("activa");
-
-  if(m==="camellos"){
-    document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
-    poner("🐫➡️");
-  } else {
-    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
-    poner("🏃‍♂️➡️");
-    document.getElementById("pista").style.background="#8B4513";
-  }
-}
-
-// personajes
-function poner(icono){
-  for(let i=0;i<4;i++){
-    document.getElementById("c"+i).innerText=icono;
-  }
-}
 
 // preguntas
 function nuevaPregunta(){
   let g=Math.floor(Math.random()*50);
   let m=Math.floor(Math.random()*60);
-
   if(Math.random()>0.5){
     return { texto:`${g}° ${m}' → minutos`, respuesta:(g*60+m)+"" };
   } else {
@@ -174,7 +122,7 @@ function nuevaPregunta(){
   }
 }
 
-// crear
+// crear sala
 function crearSala(){
   sala=Math.random().toString(36).substring(2,6).toUpperCase();
   grupo=document.getElementById("grupo").value;
@@ -183,22 +131,32 @@ function crearSala(){
 
   db.ref("salas/"+sala).set({
     jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
-    ganador:null,
-    empezado:false
+    empezado:false,
+    terminado:false
   });
 
   escuchar();
 }
 
-// unirse
+// unirse con mensaje
 function unirse(){
   sala=document.getElementById("codigo").value.toUpperCase();
   grupo=document.getElementById("grupo").value;
+  let nombre=document.getElementById("nombre").value;
+
+  if(nombre===""){
+    alert("Escribe tu nombre");
+    return;
+  }
+
+  document.getElementById("mensajeUnion").innerText =
+    nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
+
   escuchar();
 }
 
 // empezar
-function empezarCarrera(){
+function empezar(){
   db.ref("salas/"+sala).update({empezado:true});
 }
 
@@ -208,20 +166,21 @@ function escuchar(){
     const d=snap.val(); if(!d)return;
 
     for(let i=0;i<4;i++){
-      let porcentaje = (d.jugadores[i]?.pos || 0) / META * 100;
-      document.getElementById("c"+i).style.transform =
-        `translateX(${porcentaje}%)`;
+      let x=(d.jugadores[i].pos/META)*100;
+      document.getElementById("c"+i).style.left=x+"%";
     }
 
     if(d.empezado && !intervalo){
       nuevaRonda();
     }
 
-    if(d.ganador!=null){
-      document.getElementById("ganador").innerText="🏆 Grupo "+(+d.ganador+1);
+    if(d.terminado){
+      mostrarGanador();
       clearInterval(intervalo);
     }
   });
+
+  escucharRanking();
 }
 
 // ronda
@@ -241,51 +200,92 @@ function iniciarTimer(){
   intervalo=setInterval(()=>{
     document.getElementById("timer").innerText="Tiempo: "+tiempo;
     tiempo--;
-
-    if(tiempo<0){
-      nuevaRonda();
-    }
+    if(tiempo<0) nuevaRonda();
   },1000);
 }
 
 // responder
 function responder(){
   const val=document.getElementById("respuesta").value.trim();
-  if(val==="")return;
-  if(respondido)return;
+  if(val===""||respondido)return;
   respondido=true;
 
   let correcto=val==preguntaActual.respuesta;
 
-  document.getElementById("resultado").innerText=
+  document.getElementById("resultado").innerText =
     correcto?"✅ Correcto":"❌ Incorrecto";
 
   db.ref("salas/"+sala).once("value").then(snap=>{
-    const d=snap.val();
+    let d=snap.val();
     let pos=d.jugadores[grupo].pos;
 
     if(correcto) pos++;
 
     if(pos>=META){
-      db.ref("salas/"+sala).update({ganador:grupo});
+      db.ref("salas/"+sala).update({
+        terminado:true,
+        posiciones:ordenar(d.jugadores)
+      });
+      asignarPuntos(d.jugadores);
     }
 
     db.ref(`salas/${sala}/jugadores/${grupo}`).update({pos});
   });
 
   document.getElementById("respuesta").value="";
-
-  setTimeout(()=>{ nuevaRonda(); },500);
+  setTimeout(()=>nuevaRonda(),500);
 }
 
-// ENTER
-document.getElementById("respuesta").addEventListener("keypress", e=>{
+// ordenar
+function ordenar(j){
+  return Object.entries(j)
+    .sort((a,b)=>b[1].pos-a[1].pos)
+    .map(e=>e[0]);
+}
+
+// puntos
+function asignarPuntos(j){
+  let orden=ordenar(j);
+  let pts=[5,3,1];
+
+  orden.forEach((g,i)=>{
+    if(i<3){
+      db.ref("ranking/"+g).transaction(p=>(p||0)+pts[i]);
+    }
+  });
+}
+
+// ganador
+function mostrarGanador(){
+  db.ref("salas/"+sala+"/posiciones").once("value").then(snap=>{
+    let orden=snap.val();
+    document.getElementById("ganador").innerText =
+      "🏆 GANA GRUPO "+(parseInt(orden[0])+1);
+  });
+}
+
+// ranking
+function escucharRanking(){
+  db.ref("ranking").on("value",snap=>{
+    let r=snap.val()||{};
+    let html="";
+    for(let i=0;i<4;i++){
+      html += `Grupo ${i+1}: ${r[i]||0} puntos<br>`;
+    }
+    document.getElementById("ranking").innerHTML=html;
+  });
+}
+
+// enter
+document.getElementById("respuesta").addEventListener("keypress",e=>{
   if(e.key==="Enter") responder();
 });
 </script>
 
 </body>
 </html>
+
+
 
 
 </html>
