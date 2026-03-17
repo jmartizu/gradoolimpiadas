@@ -54,7 +54,6 @@ button:disabled {
 
 <body>
 
-<!-- MENU -->
 <div id="menu" class="pantalla activa">
   <h1>🎮 Selecciona juego</h1>
   <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
@@ -62,7 +61,6 @@ button:disabled {
   <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
 </div>
 
-<!-- JUEGO -->
 <div id="juego" class="pantalla">
 
 <h1 id="titulo"></h1>
@@ -102,7 +100,6 @@ button:disabled {
 
 <div id="pista">
   <div class="meta"></div>
-
   <div id="c0" class="personaje"></div>
   <div id="c1" class="personaje"></div>
   <div id="c2" class="personaje"></div>
@@ -144,20 +141,17 @@ function iniciarModo(m){
     document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
     poner("🐫➡️");
     document.getElementById("pista").style.background="#222";
-  }
-  else if(m==="atletismo"){
+  } else if(m==="atletismo"){
     document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
     poner("🏃‍♂️➡️");
     document.getElementById("pista").style.background="#8B4513";
-  }
-  else if(m==="caballos"){
+  } else {
     document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
     poner("🐎➡️");
     document.getElementById("pista").style.background="#3a3a3a";
   }
 }
 
-// personajes
 function poner(icono){
   for(let i=0;i<4;i++){
     document.getElementById("c"+i).innerText=icono;
@@ -170,9 +164,17 @@ function nuevaPregunta(){
   let m=Math.floor(Math.random()*60);
 
   if(Math.random()>0.5){
-    return { texto:`${g}° ${m}' → minutos`, respuesta:(g*60+m)+"" };
+    return {
+      texto:`${g}° ${m}' → minutos`,
+      respuesta:g*60+m,
+      tipo:"minutos"
+    };
   } else {
-    return { texto:`${g}° ${m}' → grados`, respuesta:(g+m/60).toFixed(2) };
+    return {
+      texto:`${g}° ${m}' → grados`,
+      respuesta:g+(m/60),
+      tipo:"grados"
+    };
   }
 }
 
@@ -259,16 +261,28 @@ function iniciarTimer(){
   },1000);
 }
 
-// responder (CON RETROCESO CONTROLADO)
+// responder con solución
 function responder(){
-  const val=document.getElementById("respuesta").value.trim();
+  let val=document.getElementById("respuesta").value.trim();
   if(val===""||respondido)return;
   respondido=true;
 
-  let correcto=val==preguntaActual.respuesta;
+  val = val.replace(",", ".");
+
+  let correcto=false;
+
+  if(preguntaActual.tipo==="minutos"){
+    correcto = Number(val) === preguntaActual.respuesta;
+  }else{
+    correcto = Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
+  }
+
+  let solucion = preguntaActual.tipo==="grados"
+    ? preguntaActual.respuesta.toFixed(2)
+    : preguntaActual.respuesta;
 
   document.getElementById("resultado").innerText =
-    correcto?"✅ Correcto":"❌ Incorrecto";
+    correcto ? "✅ Correcto" : "❌ Incorrecto → Correcto: " + solucion;
 
   db.ref("salas/"+sala).once("value").then(snap=>{
     let d=snap.val();
@@ -278,7 +292,7 @@ function responder(){
       pos++;
     }else{
       pos--;
-      if(pos < 0) pos = 0;
+      if(pos<0) pos=0;
     }
 
     if(pos>=META){
@@ -303,7 +317,7 @@ function ordenar(j){
     .map(e=>e[0]);
 }
 
-// puntos global
+// puntos
 function asignarPuntos(j){
   let orden=ordenar(j);
   let pts=[5,3,1];
@@ -348,6 +362,8 @@ document.getElementById("respuesta").addEventListener("keypress",e=>{
 
 </body>
 </html>
+
+
 
 
 
