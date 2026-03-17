@@ -54,14 +54,15 @@ button:disabled {
 
 <body>
 
-<!-- 🟢 MENU -->
+<!-- MENU -->
 <div id="menu" class="pantalla activa">
   <h1>🎮 Selecciona juego</h1>
   <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
   <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
+  <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
 </div>
 
-<!-- 🔵 JUEGO -->
+<!-- JUEGO -->
 <div id="juego" class="pantalla">
 
 <h1 id="titulo"></h1>
@@ -133,7 +134,7 @@ let META=20;
 let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
 
-// 🎮 seleccionar modo
+// 🎮 modo
 function iniciarModo(m){
   modo=m;
 
@@ -144,10 +145,16 @@ function iniciarModo(m){
     document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
     poner("🐫➡️");
     document.getElementById("pista").style.background="#222";
-  }else{
+  }
+  else if(m==="atletismo"){
     document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
     poner("🏃‍♂️➡️");
     document.getElementById("pista").style.background="#8B4513";
+  }
+  else if(m==="caballos"){
+    document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
+    poner("🐎➡️");
+    document.getElementById("pista").style.background="#3a3a3a";
   }
 }
 
@@ -170,7 +177,7 @@ function nuevaPregunta(){
   }
 }
 
-// crear sala
+// crear
 function crearSala(){
   if(sala !== null) return;
 
@@ -292,7 +299,7 @@ function ordenar(j){
     .map(e=>e[0]);
 }
 
-// puntos
+// puntos GLOBAL (todos los modos suman)
 function asignarPuntos(j){
   let orden=ordenar(j);
   let pts=[5,3,1];
@@ -317,7 +324,7 @@ function mostrarGanador(){
   });
 }
 
-// ranking
+// ranking global
 function escucharRanking(){
   db.ref("ranking").on("value",snap=>{
     let r=snap.val()||{};
@@ -337,5 +344,7 @@ document.getElementById("respuesta").addEventListener("keypress",e=>{
 
 </body>
 </html>
+
+
 
 
