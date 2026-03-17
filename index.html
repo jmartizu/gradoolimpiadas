@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Carrera de Camellos</title>
+<title>🐪 Carrera de Camellos PRO</title>
 
 <style>
 body {
@@ -10,23 +10,12 @@ body {
   background: #111;
   color: white;
   text-align: center;
-  padding: 20px;
-}
-
-input, button, select {
-  padding: 10px;
-  margin: 5px;
-}
-
-#codigoSala {
-  font-size: 28px;
-  color: yellow;
 }
 
 #pista {
-  margin: 20px;
-  height: 200px;
+  height: 220px;
   border: 2px solid white;
+  margin: 20px;
   position: relative;
 }
 
@@ -41,6 +30,12 @@ input, button, select {
 #c1 { top: 60px; }
 #c2 { top: 110px; }
 #c3 { top: 160px; }
+
+#pregunta {
+  font-size: 22px;
+  margin: 15px;
+  color: yellow;
+}
 </style>
 </head>
 
@@ -48,8 +43,7 @@ input, button, select {
 
 <h1>🐪 Carrera de Camellos</h1>
 
-<input id="nombre" placeholder="Tu nombre">
-
+<input id="nombre" placeholder="Nombre">
 <select id="grupo">
   <option value="0">Grupo 1</option>
   <option value="1">Grupo 2</option>
@@ -60,7 +54,6 @@ input, button, select {
 <br>
 
 <button onclick="crearSala()">Crear sala</button>
-
 <div id="codigoSala"></div>
 
 <hr>
@@ -68,9 +61,12 @@ input, button, select {
 <input id="codigo" placeholder="Código">
 <button onclick="unirse()">Unirse</button>
 
-<br><br>
+<h2 id="pregunta">Esperando pregunta...</h2>
 
-<button onclick="avanzar()">🐪 Avanzar</button>
+<input id="respuesta" placeholder="Respuesta">
+<button onclick="responder()">Responder</button>
+
+<h2 id="ganador"></h2>
 
 <div id="pista">
   <div class="camello" id="c0">🐪</div>
@@ -95,34 +91,49 @@ const db = firebase.database();
 
 let sala = null;
 let grupo = null;
+let META = 20;
 
 // 🎲 código
 function generarCodigo() {
-  return Math.random().toString(36).substring(2, 6).toUpperCase();
+  return Math.random().toString(36).substring(2,6).toUpperCase();
 }
 
-// 🏁 crear
-function crearSala() {
-  const nombre = document.getElementById("nombre").value || "PROFESOR";
-  grupo = document.getElementById("grupo").value;
+// 🧠 generar pregunta
+function nuevaPregunta() {
+  if (Math.random() > 0.5) {
+    let g = Math.floor(Math.random()*50);
+    let m = Math.floor(Math.random()*60);
+    return {
+      texto: `${g}° ${m}' → decimal`,
+      respuesta: (g + m/60).toFixed(2)
+    };
+  } else {
+    let val = (Math.random()*50).toFixed(2);
+    let min = Math.round((val % 1)*60);
+    return {
+      texto: `${val}° → grados minutos`,
+      respuesta: `${Math.floor(val)} ${min}`
+    };
+  }
+}
 
+// 🏁 crear sala
+function crearSala() {
   const code = generarCodigo();
   sala = code;
+  grupo = document.getElementById("grupo").value;
 
-  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
+  document.getElementById("codigoSala").innerText = code;
 
-  db.ref("salas/" + code).set({
+  db.ref("salas/"+code).set({
     jugadores: {
-      0: { nombre: "", pos: 0 },
-      1: { nombre: "", pos: 0 },
-      2: { nombre: "", pos: 0 },
-      3: { nombre: "", pos: 0 }
-    }
-  });
-
-  db.ref(`salas/${code}/jugadores/${grupo}`).set({
-    nombre,
-    pos: 0
+      0:{pos:0},
+      1:{pos:0},
+      2:{pos:0},
+      3:{pos:0}
+    },
+    pregunta: nuevaPregunta(),
+    ganador: null
   });
 
   escuchar();
@@ -130,53 +141,63 @@ function crearSala() {
 
 // 👥 unirse
 function unirse() {
-  const nombre = document.getElementById("nombre").value;
+  sala = document.getElementById("codigo").value.toUpperCase();
   grupo = document.getElementById("grupo").value;
-  const code = document.getElementById("codigo").value.toUpperCase();
 
-  sala = code;
-
-  db.ref("salas/" + code).once("value", snap => {
-    if (!snap.exists()) return alert("Sala no existe");
-
-    db.ref(`salas/${code}/jugadores/${grupo}`).set({
-      nombre,
-      pos: 0
-    });
-
-    escuchar();
-  });
+  escuchar();
 }
 
-// 👂 escuchar cambios
+// 👂 escuchar
 function escuchar() {
-  db.ref("salas/" + sala).on("value", snap => {
+  db.ref("salas/"+sala).on("value", snap=>{
     const data = snap.val();
     if (!data) return;
 
-    for (let i = 0; i < 4; i++) {
-      const jugador = data.jugadores[i];
-      const pos = jugador?.pos || 0;
+    document.getElementById("pregunta").innerText =
+      data.pregunta.texto;
 
-      document.getElementById("c" + i).style.transform =
-        `translateX(${pos * 10}px)`;
+    for (let i=0;i<4;i++){
+      let pos = data.jugadores[i]?.pos || 0;
+      document.getElementById("c"+i).style.transform =
+        `translateX(${pos*10}px)`;
+    }
+
+    if (data.ganador !== null) {
+      document.getElementById("ganador").innerText =
+        "🏆 GANA GRUPO " + (parseInt(data.ganador)+1);
     }
   });
 }
 
-// 🐪 avanzar
-function avanzar() {
-  const refJugador = db.ref(`salas/${sala}/jugadores/${grupo}`);
+// 🎯 responder
+function responder() {
+  const val = document.getElementById("respuesta").value;
 
-  refJugador.once("value", snap => {
+  const salaRef = db.ref("salas/"+sala);
+
+  salaRef.once("value", snap=>{
     const data = snap.val();
-    const nuevaPos = (data.pos || 0) + 1;
 
-    refJugador.update({ pos: nuevaPos });
+    if (data.ganador !== null) return;
+
+    let correcto = val == data.pregunta.respuesta;
+
+    let pos = data.jugadores[grupo].pos;
+
+    pos = correcto ? pos+1 : pos-1;
+
+    if (pos >= META) {
+      salaRef.update({ ganador: grupo });
+    }
+
+    salaRef.child("jugadores/"+grupo).update({ pos });
+
+    salaRef.update({ pregunta: nuevaPregunta() });
   });
 }
 </script>
 
 </body>
 </html>
-```
+
+
