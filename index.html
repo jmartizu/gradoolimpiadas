@@ -11,12 +11,15 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 .activa { display:block; }
 
 #pista {
-  height:220px;
-  border:2px solid white;
-  margin:20px;
-  position:relative;
+  width: 90%;
+  height: 260px;
+  margin: 20px auto;
+  border: 2px solid white;
+  position: relative;
+  background: #222;
 }
 
+/* 🏁 meta */
 .meta {
   position:absolute;
   right:0;
@@ -27,27 +30,42 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
   );
 }
 
-.camello, .corredor {
+/* 🛣️ carriles */
+.carril {
+  position:absolute;
+  width:100%;
+  height:25%;
+  border-bottom:1px dashed gray;
+}
+
+/* 🐪🏃 personajes */
+.personaje {
   position:absolute;
   left:0;
   font-size:30px;
-  transition:0.3s;
+  transition: transform 0.4s linear;
 }
 
-#c0{top:10px;} #c1{top:60px;} #c2{top:110px;} #c3{top:160px;}
+/* posiciones */
+#c0 { top: 5%; }
+#c1 { top: 30%; }
+#c2 { top: 55%; }
+#c3 { top: 80%; }
+
+button { margin:5px; padding:10px; }
 </style>
 </head>
 
 <body>
 
-<!-- 🟢 MENÚ -->
+<!-- MENU -->
 <div id="menu" class="pantalla activa">
   <h1>🎮 Selecciona juego</h1>
   <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
   <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
 </div>
 
-<!-- 🔵 JUEGO -->
+<!-- JUEGO -->
 <div id="juego" class="pantalla">
 
 <h1 id="titulo"></h1>
@@ -61,6 +79,7 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 </select>
 
 <br>
+
 <button onclick="crearSala()">Crear sala</button>
 <div id="codigoSala"></div>
 
@@ -70,6 +89,7 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <button onclick="unirse()">Unirse</button>
 
 <br><br>
+
 <button onclick="empezarCarrera()">🚀 Empezar carrera</button>
 
 <h2 id="pregunta">Esperando...</h2>
@@ -82,12 +102,19 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <h2 id="ganador"></h2>
 
 <div id="pista">
+
+  <div class="carril" style="top:0%"></div>
+  <div class="carril" style="top:25%"></div>
+  <div class="carril" style="top:50%"></div>
+  <div class="carril" style="top:75%"></div>
+
   <div class="meta"></div>
 
-  <div id="c0"></div>
-  <div id="c1"></div>
-  <div id="c2"></div>
-  <div id="c3"></div>
+  <div class="personaje" id="c0"></div>
+  <div class="personaje" id="c1"></div>
+  <div class="personaje" id="c2"></div>
+  <div class="personaje" id="c3"></div>
+
 </div>
 
 </div>
@@ -108,39 +135,34 @@ const db = firebase.database();
 
 let modo="camellos";
 let sala=null, grupo=null;
-let tiempo=40, intervalo, respondido=false, META=50;
+let META=20; // 🔥 ahora 20 aciertos
+let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
 
-// 🎮 elegir modo
+// 🎮 modo
 function iniciarModo(m){
   modo=m;
-
   document.getElementById("menu").classList.remove("activa");
   document.getElementById("juego").classList.add("activa");
 
   if(m==="camellos"){
     document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
-    ponerPersonajes("🐫➡️");
+    poner("🐫➡️");
   } else {
     document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
-    ponerPersonajes("🏃‍♂️➡️");
+    poner("🏃‍♂️➡️");
     document.getElementById("pista").style.background="#8B4513";
   }
 }
 
-// 🎨 personajes
-function ponerPersonajes(icono){
+// personajes
+function poner(icono){
   for(let i=0;i<4;i++){
     document.getElementById("c"+i).innerText=icono;
   }
 }
 
-// 🎲 código
-function generarCodigo(){
-  return Math.random().toString(36).substring(2,6).toUpperCase();
-}
-
-// 🧠 preguntas
+// preguntas
 function nuevaPregunta(){
   let g=Math.floor(Math.random()*50);
   let m=Math.floor(Math.random()*60);
@@ -152,9 +174,9 @@ function nuevaPregunta(){
   }
 }
 
-// 🏁 crear
+// crear
 function crearSala(){
-  sala=generarCodigo();
+  sala=Math.random().toString(36).substring(2,6).toUpperCase();
   grupo=document.getElementById("grupo").value;
 
   document.getElementById("codigoSala").innerText=sala;
@@ -168,26 +190,27 @@ function crearSala(){
   escuchar();
 }
 
-// 👥 unirse
+// unirse
 function unirse(){
   sala=document.getElementById("codigo").value.toUpperCase();
   grupo=document.getElementById("grupo").value;
   escuchar();
 }
 
-// 🚀 empezar
+// empezar
 function empezarCarrera(){
   db.ref("salas/"+sala).update({empezado:true});
 }
 
-// 👂 escuchar
+// escuchar
 function escuchar(){
   db.ref("salas/"+sala).on("value",snap=>{
     const d=snap.val(); if(!d)return;
 
     for(let i=0;i<4;i++){
-      document.getElementById("c"+i).style.transform=
-        `translateX(${(d.jugadores[i]?.pos||0)*8}px)`;
+      let porcentaje = (d.jugadores[i]?.pos || 0) / META * 100;
+      document.getElementById("c"+i).style.transform =
+        `translateX(${porcentaje}%)`;
     }
 
     if(d.empezado && !intervalo){
@@ -201,14 +224,14 @@ function escuchar(){
   });
 }
 
-// 🔁 ronda
+// ronda
 function nuevaRonda(){
   preguntaActual=nuevaPregunta();
   document.getElementById("pregunta").innerText=preguntaActual.texto;
   iniciarTimer();
 }
 
-// ⏱️ timer
+// timer
 function iniciarTimer(){
   clearInterval(intervalo);
   tiempo=40;
@@ -225,7 +248,7 @@ function iniciarTimer(){
   },1000);
 }
 
-// 🎯 responder
+// responder
 function responder(){
   const val=document.getElementById("respuesta").value.trim();
   if(val==="")return;
@@ -265,7 +288,6 @@ document.getElementById("respuesta").addEventListener("keypress", e=>{
 </html>
 
 
-</body>
 </html>
 
 
