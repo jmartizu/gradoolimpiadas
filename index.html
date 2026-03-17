@@ -2,10 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Carrera de Camellos</title>
+<title>🎮 Juegos de Carrera</title>
 
 <style>
 body { font-family: Arial; background:#111; color:white; text-align:center; }
+
+.pantalla { display:none; }
+.activa { display:block; }
 
 #pista {
   height:220px;
@@ -20,34 +23,34 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
   width:20px;
   height:100%;
   background:repeating-linear-gradient(
-    0deg,
-    white 0px,
-    white 10px,
-    black 10px,
-    black 20px
+    0deg, white 0px, white 10px, black 10px, black 20px
   );
 }
 
-.camello {
+.camello, .corredor {
   position:absolute;
   left:0;
   font-size:30px;
   transition:0.3s;
 }
 
-#c0{top:10px;}
-#c1{top:60px;}
-#c2{top:110px;}
-#c3{top:160px;}
-
-#pregunta { color:yellow; font-size:22px; }
-#timer { color:cyan; }
+#c0{top:10px;} #c1{top:60px;} #c2{top:110px;} #c3{top:160px;}
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Carrera de Camellos</h1>
+<!-- 🟢 MENÚ -->
+<div id="menu" class="pantalla activa">
+  <h1>🎮 Selecciona juego</h1>
+  <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
+  <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
+</div>
+
+<!-- 🔵 JUEGO -->
+<div id="juego" class="pantalla">
+
+<h1 id="titulo"></h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
@@ -58,7 +61,6 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 </select>
 
 <br>
-
 <button onclick="crearSala()">Crear sala</button>
 <div id="codigoSala"></div>
 
@@ -68,10 +70,9 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <button onclick="unirse()">Unirse</button>
 
 <br><br>
-
 <button onclick="empezarCarrera()">🚀 Empezar carrera</button>
 
-<h2 id="pregunta">Esperando inicio...</h2>
+<h2 id="pregunta">Esperando...</h2>
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
@@ -83,11 +84,12 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <div id="pista">
   <div class="meta"></div>
 
-  <!-- 🐫 mirando hacia la meta -->
-  <div class="camello" id="c0">🐫➡️</div>
-  <div class="camello" id="c1">🐫➡️</div>
-  <div class="camello" id="c2">🐫➡️</div>
-  <div class="camello" id="c3">🐫➡️</div>
+  <div id="c0"></div>
+  <div id="c1"></div>
+  <div id="c2"></div>
+  <div id="c3"></div>
+</div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -104,12 +106,34 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+let modo="camellos";
 let sala=null, grupo=null;
-let META=50;
-let tiempo=40;
-let intervalo=null;
-let respondido=false;
+let tiempo=40, intervalo, respondido=false, META=50;
 let preguntaActual=null;
+
+// 🎮 elegir modo
+function iniciarModo(m){
+  modo=m;
+
+  document.getElementById("menu").classList.remove("activa");
+  document.getElementById("juego").classList.add("activa");
+
+  if(m==="camellos"){
+    document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
+    ponerPersonajes("🐫➡️");
+  } else {
+    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
+    ponerPersonajes("🏃‍♂️➡️");
+    document.getElementById("pista").style.background="#8B4513";
+  }
+}
+
+// 🎨 personajes
+function ponerPersonajes(icono){
+  for(let i=0;i<4;i++){
+    document.getElementById("c"+i).innerText=icono;
+  }
+}
 
 // 🎲 código
 function generarCodigo(){
@@ -128,7 +152,7 @@ function nuevaPregunta(){
   }
 }
 
-// 🏁 crear sala
+// 🏁 crear
 function crearSala(){
   sala=generarCodigo();
   grupo=document.getElementById("grupo").value;
@@ -151,7 +175,7 @@ function unirse(){
   escuchar();
 }
 
-// 🚀 empezar carrera
+// 🚀 empezar
 function empezarCarrera(){
   db.ref("salas/"+sala).update({empezado:true});
 }
@@ -166,10 +190,8 @@ function escuchar(){
         `translateX(${(d.jugadores[i]?.pos||0)*8}px)`;
     }
 
-    if(d.empezado){
-      if(!intervalo){
-        nuevaRonda();
-      }
+    if(d.empezado && !intervalo){
+      nuevaRonda();
     }
 
     if(d.ganador!=null){
@@ -179,7 +201,7 @@ function escuchar(){
   });
 }
 
-// 🔁 nueva ronda (local)
+// 🔁 ronda
 function nuevaRonda(){
   preguntaActual=nuevaPregunta();
   document.getElementById("pregunta").innerText=preguntaActual.texto;
@@ -217,12 +239,9 @@ function responder(){
 
   db.ref("salas/"+sala).once("value").then(snap=>{
     const d=snap.val();
-
     let pos=d.jugadores[grupo].pos;
 
-    // ❌ no retrocede nunca
     if(correcto) pos++;
-    if(pos<0) pos=0;
 
     if(pos>=META){
       db.ref("salas/"+sala).update({ganador:grupo});
@@ -233,9 +252,7 @@ function responder(){
 
   document.getElementById("respuesta").value="";
 
-  setTimeout(()=>{
-    nuevaRonda();
-  },500);
+  setTimeout(()=>{ nuevaRonda(); },500);
 }
 
 // ENTER
@@ -243,6 +260,10 @@ document.getElementById("respuesta").addEventListener("keypress", e=>{
   if(e.key==="Enter") responder();
 });
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
