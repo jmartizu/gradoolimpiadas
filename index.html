@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Paso 2 - Unirse (FIX)</title>
+<title>🐪 Paso 2 FIX FINAL</title>
 
 <style>
 body {
@@ -62,10 +62,10 @@ input, select, button {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getDatabase, ref, set, update, get
+  getDatabase, ref, set, get
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// 🔥 TU CONFIG
+// 🔥 CONFIG CORRECTA (IMPORTANTE databaseURL)
 const firebaseConfig = {
   apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
   authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
@@ -76,7 +76,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🎲 código
+// 🎲 generar código
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
@@ -95,9 +95,11 @@ window.crearSala = async () => {
       3: null
     }
   });
+
+  document.getElementById("estado").innerText = "Sala creada correctamente";
 };
 
-// 👥 unirse (SIN BUG)
+// 👥 unirse (SIN ERROR)
 window.unirse = async () => {
   const nombre = document.getElementById("nombre").value;
   const grupo = document.getElementById("grupo").value;
@@ -108,9 +110,13 @@ window.unirse = async () => {
   const salaRef = ref(db, "salas/" + code);
   const snap = await get(salaRef);
 
-  if (!snap.exists()) return alert("Sala no existe");
+  console.log("Datos sala:", snap.val()); // 🔍 debug
 
-  // 🔥 SIEMPRE ENTRA (sin errores)
+  if (!snap.exists()) {
+    return alert("Sala no existe");
+  }
+
+  // 🔥 SIEMPRE ENTRA
   await set(ref(db, `salas/${code}/jugadores/${grupo}`), {
     nombre
   });
@@ -122,4 +128,5 @@ window.unirse = async () => {
 
 </body>
 </html>
+
 
