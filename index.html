@@ -1,28 +1,26 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🔥 Test Firebase Camellos</title>
+<title>🐪 Camellos - Sala</title>
 
 <style>
 body {
   font-family: Arial;
-  background: #111827;
+  background: #111;
   color: white;
   text-align: center;
-  padding: 40px;
+  padding: 30px;
 }
 
-button {
-  padding: 12px 20px;
-  margin: 10px;
-  font-size: 16px;
-  cursor: pointer;
+input, button, select {
+  padding: 10px;
+  margin: 5px;
 }
 
-#output {
-  margin-top: 20px;
-  font-size: 20px;
+#codigoSala {
+  font-size: 30px;
   color: yellow;
 }
 </style>
@@ -30,72 +28,104 @@ button {
 
 <body>
 
-<h1>🔥 Test Firebase Camellos</h1>
+<h1>🐪 Sala de juego</h1>
 
-<button onclick="crear()">Crear dato</button>
-<button onclick="leer()">Leer dato</button>
+<input id="nombre" placeholder="Tu nombre">
 
-<div id="output"></div>
+<select id="grupo">
+  <option value="0">Grupo 1</option>
+  <option value="1">Grupo 2</option>
+  <option value="2">Grupo 3</option>
+  <option value="3">Grupo 4</option>
+</select>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getDatabase, ref, set, get
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<br>
 
-// ✅ TU CONFIG (YA PUESTA)
+<button onclick="crearSala()">Crear sala</button>
+
+<div id="codigoSala"></div>
+
+<hr>
+
+<h2>Unirse</h2>
+
+<input id="codigo" placeholder="Código">
+<button onclick="unirse()">Unirse</button>
+
+<div id="estado"></div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+// 🔥 TU FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
   authDomain: "camellos-dcf0d.firebaseapp.com",
   databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "camellos-dcf0d",
-  storageBucket: "camellos-dcf0d.firebasestorage.app",
-  messagingSenderId: "85481612011",
-  appId: "1:85481612011:web:8e21aedd852b2cd1d994ae"
+  projectId: "camellos-dcf0d"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// 🔥 CREAR
-window.crear = async () => {
-  try {
-    await set(ref(db, "test"), {
-      mensaje: "🔥 Firebase funcionando"
+// 🎲 código
+function generarCodigo() {
+  return Math.random().toString(36).substring(2, 6).toUpperCase();
+}
+
+// 🏁 crear sala
+function crearSala() {
+  const nombre = document.getElementById("nombre").value || "PROFESOR";
+  const grupo = document.getElementById("grupo").value;
+
+  const code = generarCodigo();
+
+  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
+
+  db.ref("salas/" + code).set({
+    jugadores: {
+      0: null,
+      1: null,
+      2: null,
+      3: null
+    }
+  });
+
+  // 🔥 se une automáticamente
+  db.ref("salas/" + code + "/jugadores/" + grupo).set({
+    nombre
+  });
+
+  document.getElementById("estado").innerText =
+    "Sala creada y unido como Grupo " + (parseInt(grupo) + 1);
+}
+
+// 👥 unirse
+function unirse() {
+  const nombre = document.getElementById("nombre").value;
+  const grupo = document.getElementById("grupo").value;
+  const code = document.getElementById("codigo").value.toUpperCase();
+
+  if (!nombre) return alert("Pon nombre");
+
+  db.ref("salas/" + code).once("value", (snap) => {
+    if (!snap.exists()) {
+      alert("Sala no existe");
+      return;
+    }
+
+    // 🔥 entra siempre (sin bug)
+    db.ref("salas/" + code + "/jugadores/" + grupo).set({
+      nombre
     });
 
-    document.getElementById("output").innerText = "Dato creado";
-  } catch (e) {
-    console.error(e);
-    document.getElementById("output").innerText = "Error creando";
-  }
-};
-
-// 🔥 LEER
-window.leer = async () => {
-  try {
-    const snap = await get(ref(db, "test"));
-
-    if (snap.exists()) {
-      document.getElementById("output").innerText =
-        snap.val().mensaje;
-    } else {
-      document.getElementById("output").innerText =
-        "No existe dato";
-    }
-  } catch (e) {
-    console.error(e);
-    document.getElementById("output").innerText = "Error leyendo";
-  }
-};
+    document.getElementById("estado").innerText =
+      "Te uniste al Grupo " + (parseInt(grupo) + 1);
+  });
+}
 </script>
 
 </body>
 </html>
-
-
-</body>
-</html>
-
-
-
+```
