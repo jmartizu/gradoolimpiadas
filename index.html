@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Carrera Camellos PRO</title>
+<title>🐪 Carrera Camellos FINAL</title>
 
 <style>
 body {
@@ -20,7 +20,6 @@ body {
   overflow: hidden;
 }
 
-/* 🏁 META REAL */
 .meta {
   position: absolute;
   right: 0;
@@ -47,20 +46,9 @@ body {
 #c2 { top: 110px; }
 #c3 { top: 160px; }
 
-#pregunta {
-  font-size: 22px;
-  color: yellow;
-}
-
-#timer {
-  font-size: 20px;
-  color: cyan;
-}
-
-#resultado {
-  font-size: 20px;
-  margin: 10px;
-}
+#pregunta { color: yellow; font-size: 22px; }
+#timer { color: cyan; }
+#resultado { margin: 10px; font-size: 20px; }
 </style>
 </head>
 
@@ -120,7 +108,7 @@ const db = firebase.database();
 let sala=null;
 let grupo=null;
 let META=50;
-let tiempo=20;
+let tiempo=40;
 let intervalo=null;
 let respondido=false;
 
@@ -129,7 +117,7 @@ function generarCodigo(){
   return Math.random().toString(36).substring(2,6).toUpperCase();
 }
 
-// 🧠 preguntas (SOLO 2 TIPOS)
+// 🧠 preguntas
 function nuevaPregunta(){
   let tipo=Math.floor(Math.random()*2);
 
@@ -205,7 +193,7 @@ function escuchar(){
 // ⏱️ timer
 function iniciarTimer(){
   clearInterval(intervalo);
-  tiempo=20;
+  tiempo=40;
   respondido=false;
   document.getElementById("resultado").innerText="";
 
@@ -213,7 +201,7 @@ function iniciarTimer(){
     document.getElementById("timer").innerText="Tiempo: "+tiempo;
     tiempo--;
 
-    if(tiempo<0){
+    if(tiempo < 0){
       cambiarPregunta();
     }
   },1000);
@@ -259,6 +247,8 @@ function cambiarPregunta(){
 
 </body>
 </html>
+
+
 
 
 
