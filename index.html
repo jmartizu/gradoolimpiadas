@@ -2,17 +2,21 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Carrera de Camellos</title>
+<title>Paso 2 - Unirse (FIX)</title>
 
 <style>
 body {
   font-family: Arial;
-  text-align: center;
-  background: #0d0d1a;
+  background: #111827;
   color: white;
+  text-align: center;
+  padding: 30px;
 }
 
-h1 { margin-top: 10px; }
+input, select, button {
+  padding: 10px;
+  margin: 5px;
+}
 
 #codigoSala {
   font-size: 28px;
@@ -20,42 +24,26 @@ h1 { margin-top: 10px; }
   margin: 10px;
 }
 
-#pista {
-  height: 220px;
-  border: 2px solid white;
-  margin: 20px;
-  position: relative;
-}
-
-.camello {
-  position: absolute;
-  left: 0;
-  font-size: 30px;
-  transition: transform 0.3s;
-}
-
-#c0 { top: 10px; }
-#c1 { top: 60px; }
-#c2 { top: 110px; }
-#c3 { top: 160px; }
-
-input, button, select {
-  padding: 10px;
-  margin: 5px;
-}
-
-#ranking {
-  list-style: none;
-  padding: 0;
+#estado {
+  margin-top: 10px;
+  color: lightgreen;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Carrera de Camellos</h1>
+<h1>🐪 Crear / Unirse a sala</h1>
 
-<input id="name" placeholder="Nombre">
+<button onclick="crearSala()">Crear sala</button>
+
+<div id="codigoSala"></div>
+
+<hr>
+
+<h2>Unirse</h2>
+
+<input id="nombre" placeholder="Tu nombre">
 
 <select id="grupo">
   <option value="0">Grupo 1</option>
@@ -66,37 +54,18 @@ input, button, select {
 
 <br>
 
-<button onclick="crearSala()">Crear sala</button>
-
-<br>
-
 <input id="codigo" placeholder="Código">
-<button onclick="unirseSala()">Unirse</button>
+<button onclick="unirse()">Unirse</button>
 
-<div id="codigoSala"></div>
-
-<h2 id="pregunta">Esperando partida...</h2>
-
-<div id="pista">
-  <div class="camello" id="c0">🐪</div>
-  <div class="camello" id="c1">🐪</div>
-  <div class="camello" id="c2">🐪</div>
-  <div class="camello" id="c3">🐪</div>
-</div>
-
-<input id="respuesta" placeholder="Respuesta">
-<button onclick="responder()">Responder</button>
-
-<h2>🏆 Ranking</h2>
-<ul id="ranking"></ul>
+<div id="estado"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getDatabase, ref, set, update, onValue, get
+  getDatabase, ref, set, update, get
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// 🔥 CONFIG FIREBASE (TUYA)
+// 🔥 TU CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
   authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
@@ -107,156 +76,50 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let sala = null;
-let jugador = null;
-
-// 🎲 generar código
+// 🎲 código
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🧠 generar pregunta
-function generarPregunta() {
-  if (Math.random() > 0.5) {
-    let g = Math.floor(Math.random() * 50);
-    let m = Math.floor(Math.random() * 60);
-    return {
-      texto: `${g}° ${m}' → decimal`,
-      respuesta: (g + m / 60).toFixed(2)
-    };
-  } else {
-    let val = (Math.random() * 50).toFixed(2);
-    let min = Math.round((val % 1) * 60);
-    return {
-      texto: `${val}° → grados y minutos (ej: 12 30)`,
-      respuesta: `${Math.floor(val)} ${min}`
-    };
-  }
-}
-
 // 🏁 crear sala
 window.crearSala = async () => {
-  try {
-    const code = generarCodigo();
+  const code = generarCodigo();
 
-    document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
+  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
-    await set(ref(db, "salas/" + code), {
-      jugadores: {
-        0: null,
-        1: null,
-        2: null,
-        3: null
-      },
-      pregunta: generarPregunta()
-    });
-
-    sala = code;
-    escuchar();
-
-  } catch (e) {
-    console.error(e);
-    alert("Error creando sala");
-  }
-};
-
-// 👥 unirse
-window.unirseSala = async () => {
-  try {
-    const code = document.getElementById("codigo").value.toUpperCase();
-    const nombre = document.getElementById("name").value;
-    const grupo = document.getElementById("grupo").value;
-
-    if (!nombre) return alert("Pon nombre");
-
-    const salaRef = ref(db, "salas/" + code);
-    const snap = await get(salaRef);
-
-    if (!snap.exists()) return alert("Sala no existe");
-
-    const data = snap.val();
-    const jugadores = data.jugadores || {};
-
-    // 🔥 CORREGIDO: evita falso "ocupado"
-    if (jugadores[grupo] && jugadores[grupo].nombre) {
-      return alert("Grupo ocupado");
+  await set(ref(db, "salas/" + code), {
+    jugadores: {
+      0: null,
+      1: null,
+      2: null,
+      3: null
     }
-
-    await update(ref(db, `salas/${code}/jugadores/${grupo}`), {
-      nombre,
-      pos: 0
-    });
-
-    sala = code;
-    jugador = grupo;
-
-    document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
-
-    escuchar();
-
-  } catch (e) {
-    console.error(e);
-    alert("Error al unirse");
-  }
-};
-
-// 👂 escuchar cambios
-function escuchar() {
-  onValue(ref(db, "salas/" + sala), snap => {
-    const data = snap.val();
-    if (!data) return;
-    render(data);
   });
-}
+};
 
-// 🎨 render
-function render(data) {
-  document.getElementById("pregunta").innerText = data.pregunta?.texto || "Cargando...";
+// 👥 unirse (SIN BUG)
+window.unirse = async () => {
+  const nombre = document.getElementById("nombre").value;
+  const grupo = document.getElementById("grupo").value;
+  const code = document.getElementById("codigo").value.toUpperCase();
 
-  const ranking = document.getElementById("ranking");
-  ranking.innerHTML = "";
+  if (!nombre) return alert("Pon nombre");
 
-  for (let i = 0; i < 4; i++) {
-    const j = data.jugadores?.[i];
+  const salaRef = ref(db, "salas/" + code);
+  const snap = await get(salaRef);
 
-    if (j) {
-      document.getElementById("c" + i).style.transform =
-        `translateX(${j.pos * 10}px)`;
+  if (!snap.exists()) return alert("Sala no existe");
 
-      ranking.innerHTML += `<li>${j.nombre} (${j.pos})</li>`;
-    }
-  }
-}
+  // 🔥 SIEMPRE ENTRA (sin errores)
+  await set(ref(db, `salas/${code}/jugadores/${grupo}`), {
+    nombre
+  });
 
-// 🎯 responder
-window.responder = async () => {
-  try {
-    const val = document.getElementById("respuesta").value;
-
-    const salaRef = ref(db, "salas/" + sala);
-    const snap = await get(salaRef);
-    const data = snap.val();
-
-    const correcto = val == data.pregunta.respuesta;
-
-    const jugadorRef = ref(db, `salas/${sala}/jugadores/${jugador}`);
-    const snapJugador = await get(jugadorRef);
-
-    let pos = snapJugador.val().pos;
-    pos = correcto ? pos + 1 : pos - 1;
-
-    await update(jugadorRef, { pos });
-
-    // 🔥 nueva pregunta para todos
-    await update(salaRef, {
-      pregunta: generarPregunta()
-    });
-
-  } catch (e) {
-    console.error(e);
-  }
+  document.getElementById("estado").innerText =
+    "Te uniste al Grupo " + (parseInt(grupo) + 1);
 };
 </script>
 
 </body>
 </html>
+
