@@ -41,6 +41,11 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
   font-size:18px;
   color: lightgreen;
 }
+
+button:disabled {
+  background: gray;
+  cursor: not-allowed;
+}
 </style>
 </head>
 
@@ -58,7 +63,7 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 
 <br>
 
-<button onclick="crearSala()">Crear sala</button>
+<button id="btnCrear" onclick="crearSala()">Crear sala</button>
 <div id="codigoSala"></div>
 
 <hr>
@@ -123,12 +128,16 @@ function nuevaPregunta(){
   }
 }
 
-// crear
+// crear sala (bloquea botón)
 function crearSala(){
+  if(sala !== null) return;
+
   sala=Math.random().toString(36).substring(2,6).toUpperCase();
   grupo=document.getElementById("grupo").value;
 
   document.getElementById("codigoSala").innerText=sala;
+
+  document.getElementById("btnCrear").disabled = true;
 
   db.ref("salas/"+sala).set({
     jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
@@ -139,7 +148,7 @@ function crearSala(){
   escuchar();
 }
 
-// unirse (FIX DEFINITIVO)
+// unirse
 function unirse(){
   sala = document.getElementById("codigo").value.toUpperCase();
   grupo = document.getElementById("grupo").value;
@@ -155,10 +164,8 @@ function unirse(){
     return;
   }
 
-  const msg = document.getElementById("mensajeUnion");
-
-  msg.style.display = "block";
-  msg.innerText = nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
+  document.getElementById("mensajeUnion").innerText =
+    nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
 
   escuchar();
 }
@@ -263,12 +270,16 @@ function asignarPuntos(j){
   });
 }
 
-// ganador
+// ganador (reactiva botón)
 function mostrarGanador(){
   db.ref("salas/"+sala+"/posiciones").once("value").then(snap=>{
     let orden=snap.val();
+
     document.getElementById("ganador").innerText =
       "🏆 GANA GRUPO "+(parseInt(orden[0])+1);
+
+    document.getElementById("btnCrear").disabled = false;
+    sala = null;
   });
 }
 
@@ -294,9 +305,6 @@ document.getElementById("respuesta").addEventListener("keypress",e=>{
 </html>
 
 
-
-
-</html>
 
 
 
