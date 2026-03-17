@@ -37,8 +37,9 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 #c3 { top:85%; }
 
 #mensajeUnion {
-  color: lightgreen;
+  margin-top:10px;
   font-size:18px;
+  color: lightgreen;
 }
 </style>
 </head>
@@ -122,7 +123,7 @@ function nuevaPregunta(){
   }
 }
 
-// crear sala
+// crear
 function crearSala(){
   sala=Math.random().toString(36).substring(2,6).toUpperCase();
   grupo=document.getElementById("grupo").value;
@@ -138,19 +139,26 @@ function crearSala(){
   escuchar();
 }
 
-// unirse con mensaje
+// unirse (FIX DEFINITIVO)
 function unirse(){
-  sala=document.getElementById("codigo").value.toUpperCase();
-  grupo=document.getElementById("grupo").value;
-  let nombre=document.getElementById("nombre").value;
+  sala = document.getElementById("codigo").value.toUpperCase();
+  grupo = document.getElementById("grupo").value;
+  let nombre = document.getElementById("nombre").value;
 
   if(nombre===""){
     alert("Escribe tu nombre");
     return;
   }
 
-  document.getElementById("mensajeUnion").innerText =
-    nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
+  if(sala===""){
+    alert("Escribe el código");
+    return;
+  }
+
+  const msg = document.getElementById("mensajeUnion");
+
+  msg.style.display = "block";
+  msg.innerText = nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
 
   escuchar();
 }
