@@ -47,30 +47,29 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 
 button:disabled {
   background: gray;
-  cursor: not-allowed;
 }
 </style>
 </head>
 
 <body>
 
-<div id="menu" class="pantalla activa">
+<div id="menu" class="activa">
   <h1>🎮 Selecciona juego</h1>
   <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
   <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
   <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
 </div>
 
-<div id="juego" class="pantalla">
+<div id="juego">
 
 <h1 id="titulo"></h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
-  <option value="0">Grupo 1</option>
-  <option value="1">Grupo 2</option>
-  <option value="2">Grupo 3</option>
-  <option value="3">Grupo 4</option>
+<option value="0">Grupo 1</option>
+<option value="1">Grupo 2</option>
+<option value="2">Grupo 3</option>
+<option value="3">Grupo 4</option>
 </select>
 
 <br>
@@ -85,28 +84,26 @@ button:disabled {
 
 <h3 id="mensajeUnion"></h3>
 
-<br><br>
-
-<button onclick="empezar()">🚀 Empezar carrera</button>
+<button onclick="empezar()">🚀 Empezar</button>
 
 <h2 id="pregunta"></h2>
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
-<input id="respuesta" placeholder="Ej: 57 26 o 15.75">
+<input id="respuesta">
 <button onclick="responder()">Responder</button>
 
 <h2 id="ganador"></h2>
 
 <div id="pista">
-  <div class="meta"></div>
-  <div id="c0" class="personaje"></div>
-  <div id="c1" class="personaje"></div>
-  <div id="c2" class="personaje"></div>
-  <div id="c3" class="personaje"></div>
+<div class="meta"></div>
+<div id="c0" class="personaje"></div>
+<div id="c1" class="personaje"></div>
+<div id="c2" class="personaje"></div>
+<div id="c3" class="personaje"></div>
 </div>
 
-<h2>🏆 Ranking global</h2>
+<h2>🏆 Ranking</h2>
 <div id="ranking"></div>
 
 </div>
@@ -116,140 +113,169 @@ button:disabled {
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
-  authDomain: "camellos-dcf0d.firebaseapp.com",
-  databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "camellos-dcf0d"
+apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
+authDomain: "camellos-dcf0d.firebaseapp.com",
+databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
+projectId: "camellos-dcf0d"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let modo="camellos";
 let sala=null, grupo=null;
 let META=20;
-let tiempo=40, intervalo, respondido=false;
+let intervalo, tiempo=40, respondido=false;
 let preguntaActual=null;
 
-// modo
 function iniciarModo(m){
-  modo=m;
-  document.getElementById("menu").classList.remove("activa");
-  document.getElementById("juego").classList.add("activa");
+document.getElementById("menu").style.display="none";
+document.getElementById("juego").style.display="block";
 
-  if(m==="camellos"){
-    document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
-    poner("🐫➡️");
-    document.getElementById("pista").style.background="#222";
-  } else if(m==="atletismo"){
-    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
-    poner("🏃‍♂️➡️");
-    document.getElementById("pista").style.background="#8B4513";
-  } else {
-    document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
-    poner("🐎➡️");
-    document.getElementById("pista").style.background="#3a3a3a";
-  }
+let icono = m==="camellos"?"🐫➡️":m==="atletismo"?"🏃":"🐎";
+
+for(let i=0;i<4;i++){
+document.getElementById("c"+i).innerText=icono;
+}
 }
 
-function poner(icono){
-  for(let i=0;i<4;i++){
-    document.getElementById("c"+i).innerText=icono;
-  }
-}
-
-// 🔥 NUEVA GENERACIÓN DE PREGUNTAS
+// preguntas
 function nuevaPregunta(){
-  let tipo=Math.floor(Math.random()*3);
+let tipo=Math.floor(Math.random()*3);
 
-  let g=Math.floor(Math.random()*361);
-  let m=Math.floor(Math.random()*60);
+let g=Math.floor(Math.random()*361);
+let m=Math.floor(Math.random()*60);
 
-  if(tipo===0){
-    return {
-      texto:`${g}° ${m}' → minutos`,
-      respuesta:g*60+m,
-      tipo:"minutos"
-    };
-  }
-
-  if(tipo===1){
-    return {
-      texto:`${g}° ${m}' → grados`,
-      respuesta:g+(m/60),
-      tipo:"grados"
-    };
-  }
-
-  // 🔥 decimal → grados minutos
-  let decimal=(Math.random()*360).toFixed(2);
-  let grados=Math.floor(decimal);
-  let minutos=Math.round((decimal-grados)*60);
-
-  return {
-    texto:`${decimal}° → grados y minutos`,
-    respuesta: grados + " " + minutos,
-    tipo:"convertir"
-  };
+if(tipo===0){
+return {texto:`${g}° ${m}' → minutos`,respuesta:g*60+m,tipo:"min"};
+}
+if(tipo===1){
+return {texto:`${g}° ${m}' → grados`,respuesta:g+(m/60),tipo:"deg"};
 }
 
-// resto igual hasta responder
+// decimal
+let dec=(Math.random()*360).toFixed(2);
+let gr=Math.floor(dec);
+let mi=Math.round((dec-gr)*60);
 
+return {texto:`${dec}° → grados minutos`,respuesta:gr+" "+mi,tipo:"conv"};
+}
+
+// crear sala
+function crearSala(){
+sala=Math.random().toString(36).substring(2,6).toUpperCase();
+grupo=document.getElementById("grupo").value;
+
+document.getElementById("codigoSala").innerText=sala;
+document.getElementById("btnCrear").disabled=true;
+
+db.ref("salas/"+sala).set({
+jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
+empezado:false,
+terminado:false
+});
+
+escuchar();
+}
+
+// unirse
+function unirse(){
+sala=document.getElementById("codigo").value.toUpperCase();
+grupo=document.getElementById("grupo").value;
+let nombre=document.getElementById("nombre").value;
+
+document.getElementById("mensajeUnion").innerText=
+nombre+" unido al grupo "+(parseInt(grupo)+1);
+
+escuchar();
+}
+
+// escuchar
+function escuchar(){
+db.ref("salas/"+sala).on("value",snap=>{
+let d=snap.val(); if(!d)return;
+
+for(let i=0;i<4;i++){
+let x=(d.jugadores[i].pos/META)*100;
+document.getElementById("c"+i).style.left=x+"%";
+}
+
+if(d.empezado && !intervalo){
+nuevaRonda();
+}
+
+if(d.terminado){
+document.getElementById("ganador").innerText="🏆 FIN";
+clearInterval(intervalo);
+}
+});
+}
+
+// empezar
+function empezar(){
+db.ref("salas/"+sala).update({empezado:true});
+}
+
+// ronda
+function nuevaRonda(){
+preguntaActual=nuevaPregunta();
+document.getElementById("pregunta").innerText=preguntaActual.texto;
+iniciarTimer();
+}
+
+// timer
+function iniciarTimer(){
+clearInterval(intervalo);
+tiempo=40;
+respondido=false;
+
+intervalo=setInterval(()=>{
+document.getElementById("timer").innerText=tiempo;
+tiempo--;
+if(tiempo<0) nuevaRonda();
+},1000);
+}
+
+// responder
 function responder(){
-  let val=document.getElementById("respuesta").value.trim();
-  if(val===""||respondido)return;
-  respondido=true;
+let val=document.getElementById("respuesta").value.trim();
+if(val===""||respondido)return;
+respondido=true;
 
-  val = val.replace(",", ".");
+val=val.replace(",",".");
+let correcto=false;
 
-  let correcto=false;
-  let solucion="";
+if(preguntaActual.tipo==="min"){
+correcto=Number(val)===preguntaActual.respuesta;
+}
+else if(preguntaActual.tipo==="deg"){
+correcto=Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
+}
+else{
+correcto=val===preguntaActual.respuesta;
+}
 
-  if(preguntaActual.tipo==="minutos"){
-    correcto = Number(val) === preguntaActual.respuesta;
-    solucion=preguntaActual.respuesta;
-  }
-  else if(preguntaActual.tipo==="grados"){
-    correcto = Math.abs(Number(val)-preguntaActual.respuesta)<0.01;
-    solucion=preguntaActual.respuesta.toFixed(2);
-  }
-  else{
-    correcto = val===preguntaActual.respuesta;
-    solucion=preguntaActual.respuesta;
-  }
+document.getElementById("resultado").innerText=
+correcto?"✅":"❌ "+preguntaActual.respuesta;
 
-  document.getElementById("resultado").innerText =
-    correcto?"✅ Correcto":"❌ Incorrecto → "+solucion;
+db.ref("salas/"+sala).once("value").then(snap=>{
+let d=snap.val();
+let pos=d.jugadores[grupo].pos;
 
-  db.ref("salas/"+sala).once("value").then(snap=>{
-    let d=snap.val();
-    let pos=d.jugadores[grupo].pos;
+if(correcto) pos++;
+else {pos--; if(pos<0)pos=0;}
 
-    if(correcto){ pos++; }
-    else{ pos--; if(pos<0) pos=0; }
+if(pos>=META){
+db.ref("salas/"+sala).update({terminado:true});
+}
 
-    if(pos>=META){
-      db.ref("salas/"+sala).update({
-        terminado:true,
-        posiciones:ordenar(d.jugadores)
-      });
-      asignarPuntos(d.jugadores);
-    }
+db.ref("salas/"+sala+"/jugadores/"+grupo).update({pos});
+});
 
-    db.ref(`salas/${sala}/jugadores/${grupo}`).update({pos});
-  });
-
-  document.getElementById("respuesta").value="";
-  setTimeout(()=>nuevaRonda(),500);
+document.getElementById("respuesta").value="";
+setTimeout(nuevaRonda,500);
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
 
