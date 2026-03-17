@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Olimpiadas Gradoolímpicas</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f59e0b, #fde68a);
+      color: #1f2937;
+    }
+    .wrap { max-width: 1200px; margin: 20px auto; padding: 16px; }
+    .card {
+      background: white;
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      margin-bottom: 18px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    .hidden { display: none; }
+    .center { text-align: center; }
+    .grid { display: grid; gap: 14px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #d1d5db;
+      border-radius: 14px;
+      font-size: 16px;
+    }
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease;
+    }
+    button:hover { transform: scale(1.03); }
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #7c3aed; color: white; }
+    .success { background: #16a34a; color: white; }
+    .danger { background: #dc2626; color: white; }
+    .warning { background: #f59e0b; color: white; }
+    .ghost { background: #4b5563; color: white; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .roomcode {
+      font-size: 40px;
+      letter-spacing: 4px;
+      font-weight: 900;
+      color: #2563eb;
+      text-align: center;
+    }
+    .notice {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f3f4f6;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .exercise {
+      font-size: 30px;
+      text-align: center;
+      font-weight: 900;
+      margin: 18px 0;
+      color: #7c2d12;
+    }
+    .result {
+      min-height: 28px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 900;
+      margin-top: 12px;
+    }
+    .score {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+    .subtle { color: #6b7280; }
+    .race-track { display: grid; gap: 12px; margin-top: 18px; }
+    .lane {
+      display: grid;
+      grid-template-columns: 110px 1fr 60px;
+      align-items: center;
+      gap: 10px;
+    }
+    .team-label {
+      font-weight: 900;
+      text-align: right;
+    }
+    .track {
+      position: relative;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #fde68a, #fcd34d);
+      overflow: hidden;
+      border: 2px dashed #b45309;
+    }
+    .camel {
+      position: absolute;
+      top: 7px;
+      font-size: 30px;
+      transition: left .35s ease;
+    }
+    .finish-line {
+      position: absolute;
+      right: 6px;
+      top: 0;
+      height: 100%;
+      width: 8px;
+      background: repeating-linear-gradient(
+        to bottom,
+        #111827 0 8px,
+        #ffffff 8px 16px
+      );
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; }
+    th { background: #f8fafc; }
+    .podium {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 18px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .place {
+      width: 150px;
+      color: white;
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      font-weight: 900;
+      padding: 12px;
+      text-align: center;
+    }
+    .first { height: 190px; background: #facc15; }
+    .second { height: 145px; background: #9ca3af; }
+    .third { height: 120px; background: #b45309; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card center">
+      <h1>🐪 Olimpiadas Gradoolímpicas</h1>
+      <p>Carrera de camellos multijugador para 5 grupos con preguntas aleatorias de grados y minutos.</p>
+    </div>
+
+    <div class="card" id="firebaseBox">
+      <h2>1. Configura Firebase</h2>
+      <p class="subtle">Solo el profesor necesita preparar esto una vez. El alumnado no necesita cuenta de Firebase.</p>
+      <div class="grid grid-3">
+        <input id=""AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
+
+        <input id="authDomain" placeholder="authDomain">
+        <input id="projectId" placeholder="projectId">
+        <input id="storageBucket" placeholder="storageBucket">
+        <input id="messagingSenderId" placeholder="messagingSenderId">
+        <input id="appId" placeholder="appId">
+      </div>
+      <div class="chips" style="margin-top:14px">
+        <button class="primary" id="connectBtn">Conectar Firebase</button>
+      </div>
+      <div id="firebaseStatus" class="notice">Sin conectar.</div>
+    </div>
+
+    <div class="card" id="homeBox">
+      <h2>2. Elige cómo entrar</h2>
+      <div class="chips">
+        <button class="secondary" onclick="showTeacher()">👩‍🏫 Profesor</button>
+        <button class="success" onclick="showStudent()">👨‍🎓 Alumno</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="teacherBox">
+      <div class="chips" style="justify-content:space-between">
+        <h2 style="margin:0">Panel del profesor</h2>
+        <button class="ghost" onclick="goHome()">⬅ Volver</button>
+      </div>
+      <div class="grid grid-3">
+        <div>
+          <label>Meta de la carrera</label>
+          <select id="raceGoal">
+            <option value="15">15 casillas</option>
+            <option value="12">12 casillas</option>
+            <option value="20">20 casillas</option>
+          </select>
+        </div>
+        <div>
+          <label>Dificultad</label>
+          <select id="difficulty">
+            <option value="facil">Fácil</option>
+            <option value="medio">Medio</option>
+            <option value="dificil">Difícil</option>
+          </select>
+        </div>
+      </div>
+      <div class="chips" style="margin-top:16px">
+        <button class="primary" onclick="createRace()">Crear carrera nueva</button>
+        <button class="danger" onclick="resetRace()">Poner carrera a cero</button>
+        <button class="warning" onclick="finishRace()">Terminar carrera</button>
+      </div>
+      <div id="teacherRoomPanel" class="hidden" style="margin-top:18px">
+        <p class="subtle">Código de aula para compartir con los grupos:</p>
+        <div class="roomcode" id="roomCodeView">------</div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="studentBox">
+      <div class="chips" style="justify-content:space-between">
+        <h2 style="margin:0">Entrada del grupo</h2>
+        <button class="ghost" onclick="goHome()">⬅ Volver</button>
+      </div>
+      <div class="grid grid-2">
+        <input id="joinCode" placeholder="Código de aula">
+        <input id="studentName" placeholder="Nombre del alumno o grupo">
+      </div>
+      <div class="grid grid-2" style="margin-top:14px">
+        <select id="teamSelect">
+          <option value="A">Grupo A</option>
+          <option value="B">Grupo B</option>
+          <option value="C">Grupo C</option>
+          <option value="D">Grupo D</option>
+          <option value="E">Grupo E</option>
+        </select>
+        <div></div>
+      </div>
+      <div class="chips" style="margin-top:14px">
+        <button class="success" onclick="joinRace()">Entrar a jugar</button>
+      </div>
+
+      <div id="studentPlayBox" class="hidden" style="margin-top:18px">
+        <p class="center" id="studentHeader" style="font-size:28px;font-weight:900"></p>
+        <p class="center" id="studentModeInfo"></p>
+        <div class="exercise" id="exerciseText">Esperando pregunta...</div>
+        <div class="center">
+          <input id="answer" placeholder="Respuesta" />
+        </div>
+        <div class="chips" style="justify-content:center;margin-top:12px">
+          <button class="success" onclick="submitAnswer()">Responder</button>
+          <button class="ghost" onclick="newExercise()">Nueva pregunta</button>
+        </div>
+        <div class="result" id="resultText"></div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="raceBox">
+      <h2>🐪 Carrera en tiempo real</h2>
+      <div class="race-track" id="raceTrack"></div>
+    </div>
+
+    <div class="card hidden" id="rankingBox">
+      <h2>📊 Ranking de grupos</h2>
+      <table>
+        <thead><tr><th>#</th><th>Grupo</th><th>Camello</th><th>Casillas</th></tr></thead>
+        <tbody id="rankingBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card hidden" id="podiumBox">
+      <h2 class="center">🏆 Podium final</h2>
+      <div class="podium">
+        <div class="place second"><div id="p2">---</div><div>🥈</div></div>
+        <div class="place first"><div id="p1">---</div><div>🥇</div></div>
+        <div class="place third"><div id="p3">---</div><div>🥉</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot,
+      increment
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    let app = null;
+    let db = null;
+    let currentRoomId = '';
+    let currentRoomData = null;
+    let currentPlayerName = '';
+    let currentTeam = 'A';
+    let currentExercise = null;
+    let unsubRoom = null;
+
+    const TEAMS = ['A','B','C','D','E'];
+    const CAMELS = { A: '🐪', B: '🐫', C: '🐪', D: '🐫', E: '🐪' };
+    const TEAM_NAMES = { A: 'Grupo A', B: 'Grupo B', C: 'Grupo C', D: 'Grupo D', E: 'Grupo E' };
+    const $ = id => document.getElementById(id);
+
+    function setStatus(msg){ $('firebaseStatus').textContent = msg; }
+    function randomCode(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+    function hideAllPanels(){
+      $('teacherBox').classList.add('hidden');
+      $('studentBox').classList.add('hidden');
+    }
+
+    window.showTeacher = () => {
+      hideAllPanels();
+      $('teacherBox').classList.remove('hidden');
+      $('raceBox').classList.remove('hidden');
+      $('rankingBox').classList.remove('hidden');
+    };
+
+    window.showStudent = () => {
+      hideAllPanels();
+      $('studentBox').classList.remove('hidden');
+      $('raceBox').classList.remove('hidden');
+      $('rankingBox').classList.remove('hidden');
+    };
+
+    window.goHome = () => {
+      hideAllPanels();
+    };
+
+    $('connectBtn').addEventListener('click', () => {
+      try {
+        const firebaseConfig = {
+          apiKey: $('apiKey').value.trim(),
+          authDomain: $('authDomain').value.trim(),
+          projectId: $('projectId').value.trim(),
+          storageBucket: $('storageBucket').value.trim(),
+          messagingSenderId: $('messagingSenderId').value.trim(),
+          appId: $('appId').value.trim(),
+        };
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        setStatus('✅ Firebase conectado.');
+      } catch (e) {
+        console.error(e);
+        setStatus('❌ Error al conectar Firebase.');
+      }
+    });
+
+    function difficultyMax(diff){
+      if(diff === 'facil') return 10;
+      if(diff === 'medio') return 30;
+      return 60;
+    }
+
+    function makeExercise(diff){
+      const type = Math.random() < 0.5 ? 'degMinToMinutes' : 'minutesToDegMin';
+
+      if(type === 'degMinToMinutes'){
+        const degrees = Math.floor(Math.random()*difficultyMax(diff))+1;
+        const minutes = Math.floor(Math.random()*60);
+        const solution = degrees*60 + minutes;
+        return {
+          type,
+          text: `Convierte ${degrees}° ${minutes}′ a minutos`,
+          solution: String(solution).trim()
+        };
+      }
+
+      const degrees = Math.floor(Math.random()*difficultyMax(diff))+1;
+      const minutes = Math.floor(Math.random()*60);
+      const total = degrees*60 + minutes;
+      return {
+        type,
+        text: `${total} minutos = ¿cuántos grados y minutos?\nEscribe así: ${degrees} ${minutes}`,
+        solution: `${degrees} ${minutes}`
+      };
+    }
+
+    async function watchRace(roomId){
+      if(unsubRoom) unsubRoom();
+      unsubRoom = onSnapshot(doc(db,'camel_races',roomId), snap => {
+        if(!snap.exists()) return;
+        currentRoomData = snap.data();
+        renderRace();
+      });
+    }
+
+    function renderRace(){
+      if(!currentRoomData) return;
+      $('teacherRoomPanel').classList.remove('hidden');
+      $('roomCodeView').textContent = currentRoomId;
+      $('raceBox').classList.remove('hidden');
+      $('rankingBox').classList.remove('hidden');
+
+      const raceGoal = currentRoomData.raceGoal || 15;
+      const positions = currentRoomData.positions || {A:0,B:0,C:0,D:0,E:0};
+
+      $('raceTrack').innerHTML = '';
+      TEAMS.forEach(team => {
+        const pos = Math.max(0, positions[team] || 0);
+        const left = Math.min(92, (pos / raceGoal) * 92);
+        $('raceTrack').innerHTML += `
+          <div class="lane">
+            <div class="team-label">${TEAM_NAMES[team]}</div>
+            <div class="track">
+              <div class="camel" style="left:${left}%">${CAMELS[team]}</div>
+              <div class="finish-line"></div>
+            </div>
+            <div><b>${pos}</b></div>
+          </div>`;
+      });
+
+      const sorted = [...TEAMS].sort((a,b) => (positions[b]||0) - (positions[a]||0));
+      $('rankingBody').innerHTML = '';
+      sorted.forEach((team, i) => {
+        $('rankingBody').innerHTML += `<tr><td>${i+1}</td><td>${TEAM_NAMES[team]}</td><td>${CAMELS[team]}</td><td>${positions[team]||0}</td></tr>`;
+      });
+
+      if(currentRoomData.status === 'finished'){
+        $('podiumBox').classList.remove('hidden');
+        $('p1').textContent = TEAM_NAMES[sorted[0]] || '---';
+        $('p2').textContent = TEAM_NAMES[sorted[1]] || '---';
+        $('p3').textContent = TEAM_NAMES[sorted[2]] || '---';
+      }
+    }
+
+    window.createRace = async () => {
+      if(!db) return alert('Conecta Firebase primero.');
+      currentRoomId = randomCode();
+      const raceGoal = Number($('raceGoal').value);
+      const difficulty = $('difficulty').value;
+
+      await setDoc(doc(db,'camel_races',currentRoomId), {
+        raceGoal,
+        difficulty,
+        status: 'live',
+        positions: { A:0, B:0, C:0, D:0, E:0 },
+        updatedAt: Date.now()
+      });
+
+      $('podiumBox').classList.add('hidden');
+      await watchRace(currentRoomId);
+    };
+
+    window.resetRace = async () => {
+      if(!db || !currentRoomId || !currentRoomData) return;
+      await updateDoc(doc(db,'camel_races',currentRoomId), {
+        status: 'live',
+        positions: { A:0, B:0, C:0, D:0, E:0 },
+        updatedAt: Date.now()
+      });
+      $('podiumBox').classList.add('hidden');
+    };
+
+    window.finishRace = async () => {
+      if(!db || !currentRoomId) return;
+      await updateDoc(doc(db,'camel_races',currentRoomId), { status: 'finished' });
+    };
+
+    window.joinRace = async () => {
+      if(!db) return alert('Conecta Firebase primero.');
+      const roomId = $('joinCode').value.trim().toUpperCase();
+      const name = $('studentName').value.trim();
+      const team = $('teamSelect').value;
+      if(!roomId || !name) return alert('Escribe código y nombre.');
+
+      const snap = await getDoc(doc(db,'camel_races',roomId));
+      if(!snap.exists()) return alert('No existe esa carrera.');
+
+      currentRoomId = roomId;
+      currentRoomData = snap.data();
+      currentPlayerName = name;
+      currentTeam = team;
+
+      $('studentPlayBox').classList.remove('hidden');
+      $('studentHeader').textContent = `👤 ${name} · ${TEAM_NAMES[team]}`;
+      $('studentModeInfo').textContent = `Carrera a ${currentRoomData.raceGoal} casillas`;
+      $('resultText').textContent = '';
+
+      await watchRace(roomId);
+      newExercise();
+    };
+
+    window.newExercise = () => {
+      if(!currentRoomData || currentRoomData.status === 'finished') return;
+      currentExercise = makeExercise(currentRoomData.difficulty || 'facil');
+      $('exerciseText').innerText = currentExercise.text;
+      $('answer').value = '';
+      $('answer').focus();
+      $('resultText').textContent = '';
+    };
+
+    window.submitAnswer = async () => {
+      if(!db || !currentRoomId || !currentRoomData || !currentExercise) return;
+      if(currentRoomData.status === 'finished') return;
+
+      const user = $('answer').value.trim().replace(/\s+/g,' ');
+      if(!user) return;
+
+      const roomRef = doc(db,'camel_races',currentRoomId);
+      const positions = currentRoomData.positions || { A:0, B:0, C:0, D:0, E:0 };
+      const nowPos = positions[currentTeam] || 0;
+      const ok = user.toLowerCase() === currentExercise.solution.toLowerCase();
+
+      let nextPos = ok ? nowPos + 1 : Math.max(0, nowPos - 1);
+      let updates = {
+        [`positions.${currentTeam}`]: nextPos,
+        updatedAt: Date.now()
+      };
+
+      if(ok){
+        $('resultText').textContent = '✅ Correcto. Tu camello avanza 1.';
+      } else {
+        $('resultText').textContent = `❌ Incorrecto. Era ${currentExercise.solution}. Tu camello retrocede 1.`;
+      }
+
+      if(nextPos >= (currentRoomData.raceGoal || 15)){
+        updates.status = 'finished';
+      }
+
+      await updateDoc(roomRef, updates);
+      const fresh = await getDoc(roomRef);
+      currentRoomData = fresh.data();
+
+      if(currentRoomData.status !== 'finished'){
+        setTimeout(newExercise, 600);
+      }
+    };
+  </script>
+</body>
+</html>
