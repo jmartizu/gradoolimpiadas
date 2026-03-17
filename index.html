@@ -12,10 +12,6 @@ body {
   color: white;
 }
 
-h1 { margin-top: 10px; }
-
-#menu { margin: 20px; }
-
 #pista {
   margin: 20px;
   height: 220px;
@@ -35,14 +31,14 @@ h1 { margin-top: 10px; }
 #c2 { top: 110px; }
 #c3 { top: 160px; }
 
-input, button {
+input, button, select {
   padding: 10px;
   margin: 5px;
 }
 
-#ranking {
-  list-style: none;
-  padding: 0;
+#codigoSala {
+  font-size: 20px;
+  color: yellow;
 }
 </style>
 </head>
@@ -51,11 +47,24 @@ input, button {
 
 <h1>🐪 Camel Race Online</h1>
 
-<div id="menu">
+<div>
   <input id="name" placeholder="Tu nombre">
+
+  <select id="grupo">
+    <option value="0">Grupo 1</option>
+    <option value="1">Grupo 2</option>
+    <option value="2">Grupo 3</option>
+    <option value="3">Grupo 4</option>
+  </select>
+
+  <br>
+
   <button onclick="crearSala()">Crear sala</button>
+
   <input id="codigo" placeholder="Código">
   <button onclick="unirseSala()">Unirse</button>
+
+  <div id="codigoSala"></div>
 </div>
 
 <h2 id="pregunta"></h2>
@@ -72,7 +81,6 @@ input, button {
   <button onclick="responder()">OK</button>
 </div>
 
-<h2>🏆 Ranking</h2>
 <ul id="ranking"></ul>
 
 <script type="module">
@@ -81,15 +89,13 @@ import {
   getDatabase, ref, set, update, onValue, get
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ✅ TU CONFIG YA PUESTA
 const firebaseConfig = {
   apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
   authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
   projectId: "olimpiadas-gradoolimpicas",
   storageBucket: "olimpiadas-gradoolimpicas.firebasestorage.app",
   messagingSenderId: "774721061799",
-  appId: "1:774721061799:web:34ad8e40a90d7322936c82",
-  measurementId: "G-S526TMJ2YJ"
+  appId: "1:774721061799:web:34ad8e40a90d7322936c82"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -98,7 +104,7 @@ const db = getDatabase(app);
 let sala = null;
 let jugador = null;
 
-// 🎲 código sala
+// 🎲 generar código
 function codigoRandom() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
@@ -106,17 +112,23 @@ function codigoRandom() {
 // 🏁 crear sala
 window.crearSala = async () => {
   const nombre = document.getElementById("name").value;
+  const grupo = document.getElementById("grupo").value;
+
+  if (!nombre) return alert("Pon nombre");
 
   const code = codigoRandom();
 
   await set(ref(db, "salas/" + code), {
     jugadores: {
-      0: { nombre, pos: 0 }
+      [grupo]: { nombre, pos: 0 }
     }
   });
 
   sala = code;
-  jugador = 0;
+  jugador = grupo;
+
+  document.getElementById("codigoSala").innerText = "Código: " + code;
+
   escuchar();
 };
 
@@ -124,27 +136,30 @@ window.crearSala = async () => {
 window.unirseSala = async () => {
   const code = document.getElementById("codigo").value.toUpperCase();
   const nombre = document.getElementById("name").value;
+  const grupo = document.getElementById("grupo").value;
 
   const snap = await get(ref(db, "salas/" + code));
 
-  if (!snap.exists()) return alert("No existe");
+  if (!snap.exists()) return alert("No existe sala");
 
-  const jugadores = snap.val().jugadores;
-  const index = Object.keys(jugadores).length;
+  const jugadores = snap.val().jugadores || {};
 
-  if (index >= 4) return alert("Sala llena");
+  if (jugadores[grupo]) return alert("Grupo ocupado");
 
-  await update(ref(db, "salas/" + code + "/jugadores/" + index), {
+  await update(ref(db, "salas/" + code + "/jugadores/" + grupo), {
     nombre,
     pos: 0
   });
 
   sala = code;
-  jugador = index;
+  jugador = grupo;
+
+  document.getElementById("codigoSala").innerText = "Código: " + code;
+
   escuchar();
 };
 
-// 👂 escuchar cambios
+// 👂 escuchar
 function escuchar() {
   onValue(ref(db, "salas/" + sala), snap => {
     const data = snap.val();
@@ -154,21 +169,13 @@ function escuchar() {
 
 // 🧠 preguntas
 function generarPregunta() {
-  if (Math.random() > 0.5) {
-    let g = Math.floor(Math.random() * 50);
-    let m = Math.floor(Math.random() * 60);
-    return {
-      texto: `${g}° ${m}' → decimal`,
-      respuesta: (g + m / 60).toFixed(2)
-    };
-  } else {
-    let val = (Math.random() * 50).toFixed(2);
-    let min = Math.round((val % 1) * 60);
-    return {
-      texto: `${val}° → grados y minutos (ej: 12 30)`,
-      respuesta: `${Math.floor(val)} ${min}`
-    };
-  }
+  let g = Math.floor(Math.random() * 50);
+  let m = Math.floor(Math.random() * 60);
+
+  return {
+    texto: `${g}° ${m}' → decimal`,
+    respuesta: (g + m / 60).toFixed(2)
+  };
 }
 
 let pregunta = generarPregunta();
@@ -179,15 +186,19 @@ function render(data) {
   const ranking = document.getElementById("ranking");
   ranking.innerHTML = "";
 
-  Object.entries(data.jugadores).forEach(([i, j]) => {
-    document.getElementById("c" + i).style.transform =
-      `translateX(${j.pos * 10}px)`;
+  for (let i = 0; i < 4; i++) {
+    const j = data.jugadores[i];
 
-    ranking.innerHTML += `<li>${j.nombre} (${j.pos})</li>`;
-  });
+    if (j) {
+      document.getElementById("c" + i).style.transform =
+        `translateX(${j.pos * 10}px)`;
+
+      ranking.innerHTML += `<li>${j.nombre} (${j.pos})</li>`;
+    }
+  }
 }
 
-// ✅ responder
+// 🎯 responder
 window.responder = async () => {
   const val = document.getElementById("respuesta").value;
 
@@ -207,4 +218,4 @@ window.responder = async () => {
 
 </body>
 </html>
-```
+
