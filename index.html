@@ -6,19 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{font-family:Arial;background:linear-gradient(#fde68a,#f59e0b);margin:0}
+body{font-family:Arial;background:#fde68a;margin:0}
 .container{max-width:1000px;margin:auto;padding:20px}
-.card{background:white;padding:20px;border-radius:16px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,0.2)}
-button{padding:10px;border:none;border-radius:10px;margin:5px;cursor:pointer;font-weight:bold}
+.card{background:white;padding:20px;border-radius:16px;margin-bottom:20px}
+button{padding:10px;border:none;border-radius:10px;margin:5px;cursor:pointer}
 .primary{background:#2563eb;color:white}
 .success{background:#16a34a;color:white}
-.modeBtn{background:#7c3aed;color:white}
-.track{position:relative;height:60px;background:#fde68a;margin:12px;border-radius:12px;border:2px dashed #b45309}
-.camel{position:absolute;top:10px;font-size:32px;transition:0.4s}
-.finish{position:absolute;right:0;width:10px;height:100%;background:repeating-linear-gradient(black 0 10px,white 10px 20px)}
-.laneLabel{position:absolute;left:5px;top:-18px;font-weight:bold}
+.mode{background:#7c3aed;color:white}
+.track{position:relative;height:60px;background:#fde68a;margin:10px;border-radius:12px;border:2px dashed #b45309}
+.camel{position:absolute;top:10px;font-size:28px;transition:0.3s}
+.finish{position:absolute;right:0;width:10px;height:100%;background:black}
 .hidden{display:none}
-h1{text-align:center}
 </style>
 </head>
 
@@ -28,14 +26,14 @@ h1{text-align:center}
 <h1>🏁 🐪 Olimpiadas Gradoolímpicas</h1>
 
 <div class="card">
-<h3>Modo de juego</h3>
-<button class="modeBtn" onclick="setMode('team')">🐪 Equipos</button>
-<button class="modeBtn" onclick="setMode('solo')">👤 Individual</button>
+<h3>Modo</h3>
+<button class="mode" onclick="setMode('team')">🐪 Equipos</button>
+<button class="mode" onclick="setMode('solo')">👤 Individual</button>
 <p id="modeText">Modo actual: Equipos</p>
 </div>
 
 <div class="card">
-<button class="primary" onclick="createRace()">🚀 Crear carrera</button>
+<button class="primary" onclick="createRace()">Crear carrera</button>
 <h2 id="code"></h2>
 </div>
 
@@ -54,14 +52,14 @@ h1{text-align:center}
 
 <div class="card hidden" id="game">
 <h2 id="player"></h2>
-<div id="question" style="font-size:22px;margin:10px"></div>
-<input id="answer" placeholder="respuesta">
+<div id="question"></div>
+<input id="answer">
 <button onclick="check()">Responder</button>
-<p id="result" style="font-weight:bold"></p>
+<p id="result"></p>
 </div>
 
 <div class="card">
-<h2>🏁 Carrera en vivo</h2>
+<h2>🏁 Carrera</h2>
 <div id="race"></div>
 </div>
 
@@ -141,25 +139,21 @@ function listen(id){
 
 function draw(data){
  let html="";
- const camels=["🐪","🐫","🐪","🐫","🐪"];
 
  if(data.mode==="team"){
   for(let t of ["A","B","C","D","E"]){
    let p=data.positions[t]||0;
    let left=(p/data.goal)*85;
    html+=`<div class="track">
-   <div class="laneLabel">Grupo ${t}</div>
-   <div class="camel" style="left:${left}%">🐪</div>
+   <div class="camel" style="left:${left}%">🐪 Grupo ${t}</div>
    <div class="finish"></div></div>`;
   }
  }else{
-  let entries=Object.entries(data.players||{});
-  entries.sort((a,b)=>b[1]-a[1]);
-  entries.slice(0,10).forEach((p,i)=>{
+  let sorted=Object.entries(data.players||{}).sort((a,b)=>b[1]-a[1]);
+  sorted.slice(0,10).forEach(p=>{
    let left=(p[1]/data.goal)*85;
    html+=`<div class="track">
-   <div class="laneLabel">${p[0]}</div>
-   <div class="camel" style="left:${left}%">🐪</div>
+   <div class="camel" style="left:${left}%">🐪 ${p[0]}</div>
    <div class="finish"></div></div>`;
   });
  }
@@ -171,8 +165,7 @@ function newQ(){
  let g=Math.floor(Math.random()*10)+1;
  let m=Math.floor(Math.random()*60);
  exercise={g,m,sol:g*60+m};
- document.getElementById("question").innerText=
- `Convierte ${g}° ${m}′ a minutos`;
+ document.getElementById("question").innerText=`Convierte ${g}° ${m}′ a minutos`;
 }
 
 window.check = async ()=>{
@@ -198,4 +191,5 @@ window.check = async ()=>{
 </script>
 </body>
 </html>
+
 
