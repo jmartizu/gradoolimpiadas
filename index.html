@@ -2,26 +2,52 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Camellos PRO individual</title>
+<title>🐪 Carrera de Camellos</title>
 
 <style>
 body { font-family: Arial; background:#111; color:white; text-align:center; }
 
-#pista { height:220px; border:2px solid white; margin:20px; position:relative; }
-
-.meta {
-  position:absolute; right:0; width:20px; height:100%;
-  background:repeating-linear-gradient(0deg,white 0px,white 10px,black 10px,black 20px);
+#pista {
+  height:220px;
+  border:2px solid white;
+  margin:20px;
+  position:relative;
 }
 
-.camello { position:absolute; left:0; font-size:30px; transition:0.3s; }
-#c0{top:10px;} #c1{top:60px;} #c2{top:110px;} #c3{top:160px;}
+.meta {
+  position:absolute;
+  right:0;
+  width:20px;
+  height:100%;
+  background:repeating-linear-gradient(
+    0deg,
+    white 0px,
+    white 10px,
+    black 10px,
+    black 20px
+  );
+}
+
+.camello {
+  position:absolute;
+  left:0;
+  font-size:30px;
+  transition:0.3s;
+}
+
+#c0{top:10px;}
+#c1{top:60px;}
+#c2{top:110px;}
+#c3{top:160px;}
+
+#pregunta { color:yellow; font-size:22px; }
+#timer { color:cyan; }
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Carrera Camellos (Individual)</h1>
+<h1>🐪 Carrera de Camellos</h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
@@ -32,6 +58,7 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 </select>
 
 <br>
+
 <button onclick="crearSala()">Crear sala</button>
 <div id="codigoSala"></div>
 
@@ -40,7 +67,11 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <input id="codigo" placeholder="Código">
 <button onclick="unirse()">Unirse</button>
 
-<h2 id="pregunta"></h2>
+<br><br>
+
+<button onclick="empezarCarrera()">🚀 Empezar carrera</button>
+
+<h2 id="pregunta">Esperando inicio...</h2>
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
@@ -51,10 +82,12 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 
 <div id="pista">
   <div class="meta"></div>
-  <div class="camello" id="c0">🐪</div>
-  <div class="camello" id="c1">🐪</div>
-  <div class="camello" id="c2">🐪</div>
-  <div class="camello" id="c3">🐪</div>
+
+  <!-- 🐫 mirando hacia la meta -->
+  <div class="camello" id="c0">🐫➡️</div>
+  <div class="camello" id="c1">🐫➡️</div>
+  <div class="camello" id="c2">🐫➡️</div>
+  <div class="camello" id="c3">🐫➡️</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -71,52 +104,56 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let sala=null, grupo=null, META=50;
-let tiempo=40, intervalo, respondido=false;
-
-// 🔥 pregunta LOCAL (cada alumno distinta)
+let sala=null, grupo=null;
+let META=50;
+let tiempo=40;
+let intervalo=null;
+let respondido=false;
 let preguntaActual=null;
 
+// 🎲 código
+function generarCodigo(){
+  return Math.random().toString(36).substring(2,6).toUpperCase();
+}
+
+// 🧠 preguntas
 function nuevaPregunta(){
   let g=Math.floor(Math.random()*50);
   let m=Math.floor(Math.random()*60);
 
   if(Math.random()>0.5){
-    return {
-      texto:`${g}° ${m}' → minutos`,
-      respuesta:(g*60+m)+""
-    };
+    return { texto:`${g}° ${m}' → minutos`, respuesta:(g*60+m)+"" };
   } else {
-    return {
-      texto:`${g}° ${m}' → grados`,
-      respuesta:(g+m/60).toFixed(2)
-    };
+    return { texto:`${g}° ${m}' → grados`, respuesta:(g+m/60).toFixed(2) };
   }
 }
 
-// 🏁 crear
+// 🏁 crear sala
 function crearSala(){
-  sala=Math.random().toString(36).substring(2,6).toUpperCase();
+  sala=generarCodigo();
   grupo=document.getElementById("grupo").value;
 
   document.getElementById("codigoSala").innerText=sala;
 
   db.ref("salas/"+sala).set({
     jugadores:{0:{pos:0},1:{pos:0},2:{pos:0},3:{pos:0}},
-    ganador:null
+    ganador:null,
+    empezado:false
   });
 
   escuchar();
-  nuevaRonda();
 }
 
 // 👥 unirse
 function unirse(){
   sala=document.getElementById("codigo").value.toUpperCase();
   grupo=document.getElementById("grupo").value;
-
   escuchar();
-  nuevaRonda();
+}
+
+// 🚀 empezar carrera
+function empezarCarrera(){
+  db.ref("salas/"+sala).update({empezado:true});
 }
 
 // 👂 escuchar
@@ -129,6 +166,12 @@ function escuchar(){
         `translateX(${(d.jugadores[i]?.pos||0)*8}px)`;
     }
 
+    if(d.empezado){
+      if(!intervalo){
+        nuevaRonda();
+      }
+    }
+
     if(d.ganador!=null){
       document.getElementById("ganador").innerText="🏆 Grupo "+(+d.ganador+1);
       clearInterval(intervalo);
@@ -136,7 +179,7 @@ function escuchar(){
   });
 }
 
-// 🔁 nueva ronda LOCAL
+// 🔁 nueva ronda (local)
 function nuevaRonda(){
   preguntaActual=nuevaPregunta();
   document.getElementById("pregunta").innerText=preguntaActual.texto;
@@ -176,7 +219,10 @@ function responder(){
     const d=snap.val();
 
     let pos=d.jugadores[grupo].pos;
-    pos=correcto?pos+1:pos-1;
+
+    // ❌ no retrocede nunca
+    if(correcto) pos++;
+    if(pos<0) pos=0;
 
     if(pos>=META){
       db.ref("salas/"+sala).update({ganador:grupo});
@@ -200,4 +246,6 @@ document.getElementById("respuesta").addEventListener("keypress", e=>{
 
 </body>
 </html>
+
+
 
