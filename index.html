@@ -2,10 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🎮 Carrera de Camellos</title>
+<title>🎮 Juegos de Carrera</title>
 
 <style>
 body { font-family: Arial; background:#111; color:white; text-align:center; }
+
+.pantalla { display:none; }
+.activa { display:block; }
 
 #pista {
   width:90%;
@@ -51,7 +54,17 @@ button:disabled {
 
 <body>
 
-<h1>🐪 Carrera de Camellos</h1>
+<!-- 🟢 MENU -->
+<div id="menu" class="pantalla activa">
+  <h1>🎮 Selecciona juego</h1>
+  <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
+  <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
+</div>
+
+<!-- 🔵 JUEGO -->
+<div id="juego" class="pantalla">
+
+<h1 id="titulo"></h1>
 
 <input id="nombre" placeholder="Nombre">
 <select id="grupo">
@@ -89,14 +102,16 @@ button:disabled {
 <div id="pista">
   <div class="meta"></div>
 
-  <div id="c0" class="personaje">🐫➡️</div>
-  <div id="c1" class="personaje">🐫➡️</div>
-  <div id="c2" class="personaje">🐫➡️</div>
-  <div id="c3" class="personaje">🐫➡️</div>
+  <div id="c0" class="personaje"></div>
+  <div id="c1" class="personaje"></div>
+  <div id="c2" class="personaje"></div>
+  <div id="c3" class="personaje"></div>
 </div>
 
 <h2>🏆 Ranking global</h2>
 <div id="ranking"></div>
+
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -112,15 +127,42 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+let modo="camellos";
 let sala=null, grupo=null;
 let META=20;
 let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
 
+// 🎮 seleccionar modo
+function iniciarModo(m){
+  modo=m;
+
+  document.getElementById("menu").classList.remove("activa");
+  document.getElementById("juego").classList.add("activa");
+
+  if(m==="camellos"){
+    document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
+    poner("🐫➡️");
+    document.getElementById("pista").style.background="#222";
+  }else{
+    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
+    poner("🏃‍♂️➡️");
+    document.getElementById("pista").style.background="#8B4513";
+  }
+}
+
+// personajes
+function poner(icono){
+  for(let i=0;i<4;i++){
+    document.getElementById("c"+i).innerText=icono;
+  }
+}
+
 // preguntas
 function nuevaPregunta(){
   let g=Math.floor(Math.random()*50);
   let m=Math.floor(Math.random()*60);
+
   if(Math.random()>0.5){
     return { texto:`${g}° ${m}' → minutos`, respuesta:(g*60+m)+"" };
   } else {
@@ -128,7 +170,7 @@ function nuevaPregunta(){
   }
 }
 
-// crear sala (bloquea botón)
+// crear sala
 function crearSala(){
   if(sala !== null) return;
 
@@ -136,7 +178,6 @@ function crearSala(){
   grupo=document.getElementById("grupo").value;
 
   document.getElementById("codigoSala").innerText=sala;
-
   document.getElementById("btnCrear").disabled = true;
 
   db.ref("salas/"+sala).set({
@@ -150,19 +191,12 @@ function crearSala(){
 
 // unirse
 function unirse(){
-  sala = document.getElementById("codigo").value.toUpperCase();
-  grupo = document.getElementById("grupo").value;
-  let nombre = document.getElementById("nombre").value;
+  sala=document.getElementById("codigo").value.toUpperCase();
+  grupo=document.getElementById("grupo").value;
+  let nombre=document.getElementById("nombre").value;
 
-  if(nombre===""){
-    alert("Escribe tu nombre");
-    return;
-  }
-
-  if(sala===""){
-    alert("Escribe el código");
-    return;
-  }
+  if(nombre===""){ alert("Escribe tu nombre"); return; }
+  if(sala===""){ alert("Escribe el código"); return; }
 
   document.getElementById("mensajeUnion").innerText =
     nombre + " te has añadido al Grupo " + (parseInt(grupo)+1);
@@ -270,7 +304,7 @@ function asignarPuntos(j){
   });
 }
 
-// ganador (reactiva botón)
+// ganador
 function mostrarGanador(){
   db.ref("salas/"+sala+"/posiciones").once("value").then(snap=>{
     let orden=snap.val();
@@ -303,8 +337,5 @@ document.getElementById("respuesta").addEventListener("keypress",e=>{
 
 </body>
 </html>
-
-
-
 
 
