@@ -2,235 +2,209 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Olimpiadas Gradoolímpicas</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐪 Camel Race Online</title>
 
 <style>
-body{font-family:Arial;background:#fde68a;margin:0}
-.container{max-width:1000px;margin:auto;padding:20px}
-.card{background:white;padding:20px;border-radius:16px;margin-bottom:20px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
-button{padding:10px 14px;border:none;border-radius:10px;margin:5px;cursor:pointer;font-weight:bold}
-.primary{background:#2563eb;color:white}
-.success{background:#16a34a;color:white}
-.mode{background:#7c3aed;color:white}
-.track{position:relative;height:60px;background:#fde68a;margin:10px;border-radius:12px;border:2px dashed #b45309;overflow:hidden}
-.camel{position:absolute;top:12px;font-size:26px;transition:0.3s;white-space:nowrap}
-.finish{position:absolute;right:0;width:10px;height:100%;background:repeating-linear-gradient(black 0 10px,white 10px 20px)}
-.hidden{display:none}
-h1{text-align:center}
-input,select{padding:10px;border-radius:10px;border:1px solid #ccc;margin:5px;width:calc(100% - 12px);max-width:350px}
-#question{font-size:22px;margin:10px 0}
-#result{font-weight:bold;font-size:18px}
-.note{color:#555;font-size:14px}
+body {
+  font-family: Arial;
+  text-align: center;
+  background: linear-gradient(#1e1e2f, #0d0d1a);
+  color: white;
+}
+
+h1 { margin-top: 10px; }
+
+#menu { margin: 20px; }
+
+#pista {
+  margin: 20px;
+  height: 220px;
+  border: 2px solid white;
+  position: relative;
+}
+
+.camello {
+  position: absolute;
+  left: 0;
+  font-size: 30px;
+  transition: transform 0.3s;
+}
+
+#c0 { top: 10px; }
+#c1 { top: 60px; }
+#c2 { top: 110px; }
+#c3 { top: 160px; }
+
+input, button {
+  padding: 10px;
+  margin: 5px;
+}
+
+#ranking {
+  list-style: none;
+  padding: 0;
+}
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<h1>🏁 🐪 Olimpiadas Gradoolímpicas</h1>
+<h1>🐪 Camel Race Online</h1>
 
-<div class="card">
-  <h3>Modo</h3>
-  <button class="mode" onclick="setMode('team')">🐪 Equipos</button>
-  <button class="mode" onclick="setMode('solo')">👤 Individual</button>
-  <p id="modeText">Modo actual: Equipos</p>
-  <p class="note">Elige el modo antes de pulsar "Crear carrera".</p>
+<div id="menu">
+  <input id="name" placeholder="Tu nombre">
+  <button onclick="crearSala()">Crear sala</button>
+  <input id="codigo" placeholder="Código">
+  <button onclick="unirseSala()">Unirse</button>
 </div>
 
-<div class="card">
-  <button class="primary" onclick="createRace()">Crear carrera</button>
-  <h2 id="code"></h2>
+<h2 id="pregunta"></h2>
+
+<div id="pista">
+  <div class="camello" id="c0">🐪</div>
+  <div class="camello" id="c1">🐪</div>
+  <div class="camello" id="c2">🐪</div>
+  <div class="camello" id="c3">🐪</div>
 </div>
 
-<div class="card">
-  <input id="room" placeholder="Código">
-  <input id="name" placeholder="Nombre">
-  <select id="team">
-    <option value="A">Grupo A</option>
-    <option value="B">Grupo B</option>
-    <option value="C">Grupo C</option>
-    <option value="D">Grupo D</option>
-    <option value="E">Grupo E</option>
-  </select>
-  <button class="success" onclick="join()">Entrar</button>
+<div>
+  <input id="respuesta" placeholder="Respuesta">
+  <button onclick="responder()">OK</button>
 </div>
 
-<div class="card hidden" id="game">
-  <h2 id="player"></h2>
-  <div id="question"></div>
-  <input id="answer" placeholder="respuesta">
-  <button onclick="check()">Responder</button>
-  <p id="result"></p>
-</div>
-
-<div class="card">
-  <h2>🏁 Carrera</h2>
-  <div id="race"></div>
-</div>
-
-</div>
+<h2>🏆 Ranking</h2>
+<ul id="ranking"></ul>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getDatabase, ref, set, update, onValue, get
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+// ✅ TU CONFIG YA PUESTA
 const firebaseConfig = {
   apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
   authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
   projectId: "olimpiadas-gradoolimpicas",
   storageBucket: "olimpiadas-gradoolimpicas.firebasestorage.app",
   messagingSenderId: "774721061799",
-  appId: "1:774721061799:web:34ad8e40a90d7322936c82"
+  appId: "1:774721061799:web:34ad8e40a90d7322936c82",
+  measurementId: "G-S526TMJ2YJ"
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getDatabase(app);
 
-let roomId = "";
-let team = "";
-let playerName = "";
-let exercise;
-let gameMode = "team";
+let sala = null;
+let jugador = null;
 
-window.setMode = function(mode){
-  gameMode = mode;
-  document.getElementById("modeText").innerText =
-    "Modo actual: " + (mode === "team" ? "Equipos" : "Individual");
-};
-
-function randomCode(){
-  return Math.random().toString(36).substring(2,7).toUpperCase();
+// 🎲 código sala
+function codigoRandom() {
+  return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-window.createRace = async function(){
-  roomId = randomCode();
-  await setDoc(doc(db,"races",roomId),{
-    mode: gameMode,
-    positions: {A:0,B:0,C:0,D:0,E:0},
-    players: {},
-    goal: 15
+// 🏁 crear sala
+window.crearSala = async () => {
+  const nombre = document.getElementById("name").value;
+
+  const code = codigoRandom();
+
+  await set(ref(db, "salas/" + code), {
+    jugadores: {
+      0: { nombre, pos: 0 }
+    }
   });
-  document.getElementById("code").innerText = "Código: " + roomId;
-  listen(roomId);
+
+  sala = code;
+  jugador = 0;
+  escuchar();
 };
 
-window.join = async function(){
-  roomId = document.getElementById("room").value.toUpperCase().trim();
-  team = document.getElementById("team").value;
-  playerName = document.getElementById("name").value.trim();
+// 👥 unirse
+window.unirseSala = async () => {
+  const code = document.getElementById("codigo").value.toUpperCase();
+  const nombre = document.getElementById("name").value;
 
-  if(!roomId || !playerName){
-    alert("Escribe código y nombre");
-    return;
-  }
+  const snap = await get(ref(db, "salas/" + code));
 
-  const ref = doc(db,"races",roomId);
-  const snap = await getDoc(ref);
+  if (!snap.exists()) return alert("No existe");
 
-  if(!snap.exists()){
-    alert("La carrera no existe");
-    return;
-  }
+  const jugadores = snap.val().jugadores;
+  const index = Object.keys(jugadores).length;
 
-  const data = snap.data();
+  if (index >= 4) return alert("Sala llena");
 
-  document.getElementById("player").innerText =
-    data.mode === "team" ? `${playerName} · Grupo ${team}` : playerName;
+  await update(ref(db, "salas/" + code + "/jugadores/" + index), {
+    nombre,
+    pos: 0
+  });
 
-  document.getElementById("game").classList.remove("hidden");
-
-  if(data.mode === "solo"){
-    await updateDoc(ref,{
-      [`players.${playerName}`]: data.players?.[playerName] ?? 0
-    });
-  }
-
-  listen(roomId);
-  newQ();
+  sala = code;
+  jugador = index;
+  escuchar();
 };
 
-function listen(id){
-  onSnapshot(doc(db,"races",id),(snap)=>{
-    const data = snap.data();
-    if(data) draw(data);
+// 👂 escuchar cambios
+function escuchar() {
+  onValue(ref(db, "salas/" + sala), snap => {
+    const data = snap.val();
+    render(data);
   });
 }
 
-function draw(data){
-  let html = "";
-
-  if(data.mode === "team"){
-    for(const t of ["A","B","C","D","E"]){
-      const p = data.positions?.[t] || 0;
-      const left = (p / data.goal) * 85;
-      html += `
-        <div class="track">
-          <div class="camel" style="left:${left}%">🐪 Grupo ${t}</div>
-          <div class="finish"></div>
-        </div>`;
-    }
+// 🧠 preguntas
+function generarPregunta() {
+  if (Math.random() > 0.5) {
+    let g = Math.floor(Math.random() * 50);
+    let m = Math.floor(Math.random() * 60);
+    return {
+      texto: `${g}° ${m}' → decimal`,
+      respuesta: (g + m / 60).toFixed(2)
+    };
   } else {
-    const sorted = Object.entries(data.players || {}).sort((a,b)=>b[1]-a[1]);
-    if(sorted.length === 0){
-      html = "<p class='note'>Aún no hay jugadores en la carrera individual.</p>";
-    } else {
-      sorted.slice(0,10).forEach(([name, score])=>{
-        const left = (score / data.goal) * 85;
-        html += `
-          <div class="track">
-            <div class="camel" style="left:${left}%">🐪 ${name}</div>
-            <div class="finish"></div>
-          </div>`;
-      });
-    }
+    let val = (Math.random() * 50).toFixed(2);
+    let min = Math.round((val % 1) * 60);
+    return {
+      texto: `${val}° → grados y minutos (ej: 12 30)`,
+      respuesta: `${Math.floor(val)} ${min}`
+    };
   }
-
-  document.getElementById("race").innerHTML = html;
 }
 
-function newQ(){
-  const g = Math.floor(Math.random()*10)+1;
-  const m = Math.floor(Math.random()*60);
-  exercise = { g, m, sol: g*60 + m };
-  document.getElementById("question").innerText = `Convierte ${g}° ${m}′ a minutos`;
-  document.getElementById("answer").value = "";
+let pregunta = generarPregunta();
+
+function render(data) {
+  document.getElementById("pregunta").innerText = pregunta.texto;
+
+  const ranking = document.getElementById("ranking");
+  ranking.innerHTML = "";
+
+  Object.entries(data.jugadores).forEach(([i, j]) => {
+    document.getElementById("c" + i).style.transform =
+      `translateX(${j.pos * 10}px)`;
+
+    ranking.innerHTML += `<li>${j.nombre} (${j.pos})</li>`;
+  });
 }
 
-window.check = async function(){
-  const user = parseInt(document.getElementById("answer").value, 10);
+// ✅ responder
+window.responder = async () => {
+  const val = document.getElementById("respuesta").value;
 
-  if(Number.isNaN(user)){
-    alert("Escribe una respuesta numérica");
-    return;
-  }
+  const correcto = val == pregunta.respuesta;
 
-  const ref = doc(db,"races",roomId);
-  const snap = await getDoc(ref);
+  const refJugador = ref(db, `salas/${sala}/jugadores/${jugador}`);
+  const snap = await get(refJugador);
 
-  if(!snap.exists()){
-    alert("La carrera ya no existe");
-    return;
-  }
+  let pos = snap.val().pos;
+  pos = correcto ? pos + 1 : pos - 1;
 
-  const data = snap.data();
+  await update(refJugador, { pos });
 
-  if(data.mode === "team"){
-    const pos = data.positions || {A:0,B:0,C:0,D:0,E:0};
-    pos[team] = user === exercise.sol ? (pos[team] || 0) + 1 : Math.max(0, (pos[team] || 0) - 1);
-    await updateDoc(ref,{ positions: pos });
-  } else {
-    const current = data.players?.[playerName] || 0;
-    const newValue = user === exercise.sol ? current + 1 : Math.max(0, current - 1);
-    await updateDoc(ref,{
-      [`players.${playerName}`]: newValue
-    });
-  }
-
-  document.getElementById("result").innerText = user === exercise.sol ? "✅ Correcto" : "❌ Incorrecto";
-  newQ();
+  pregunta = generarPregunta();
 };
 </script>
+
 </body>
 </html>
+```
