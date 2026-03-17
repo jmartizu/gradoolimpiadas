@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Paso 2 FINAL</title>
+<title>🔥 Test Firebase Camellos</title>
 
 <style>
 body {
@@ -10,54 +10,32 @@ body {
   background: #111827;
   color: white;
   text-align: center;
-  padding: 30px;
+  padding: 40px;
 }
 
-input, select, button {
-  padding: 10px;
-  margin: 5px;
-}
-
-#codigoSala {
-  font-size: 28px;
-  color: yellow;
+button {
+  padding: 12px 20px;
   margin: 10px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-#estado {
-  margin-top: 10px;
-  color: lightgreen;
+#output {
+  margin-top: 20px;
+  font-size: 20px;
+  color: yellow;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Crear / Unirse a sala</h1>
+<h1>🔥 Test Firebase Camellos</h1>
 
-<input id="nombre" placeholder="Tu nombre">
+<button onclick="crear()">Crear dato</button>
+<button onclick="leer()">Leer dato</button>
 
-<select id="grupo">
-  <option value="0">Grupo 1</option>
-  <option value="1">Grupo 2</option>
-  <option value="2">Grupo 3</option>
-  <option value="3">Grupo 4</option>
-</select>
-
-<br>
-
-<button onclick="crearSala()">Crear sala</button>
-
-<div id="codigoSala"></div>
-
-<hr>
-
-<h2>Unirse a sala existente</h2>
-
-<input id="codigo" placeholder="Código">
-<button onclick="unirse()">Unirse</button>
-
-<div id="estado"></div>
+<div id="output"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -65,71 +43,56 @@ import {
   getDatabase, ref, set, get
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// 🔥 CONFIG FIREBASE (CORRECTA)
+// ✅ TU CONFIG (YA PUESTA)
 const firebaseConfig = {
-  apiKey: "AIzaSyCM7TJS74FMJCdv0zALrR11Hf66OPx7eSk",
-  authDomain: "olimpiadas-gradoolimpicas.firebaseapp.com",
-  databaseURL: "https://olimpiadas-gradoolimpicas-default-rtdb.firebaseio.com",
-  projectId: "olimpiadas-gradoolimpicas"
+  apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
+  authDomain: "camellos-dcf0d.firebaseapp.com",
+  databaseURL: "https://camellos-dcf0d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "camellos-dcf0d",
+  storageBucket: "camellos-dcf0d.firebasestorage.app",
+  messagingSenderId: "85481612011",
+  appId: "1:85481612011:web:8e21aedd852b2cd1d994ae"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🎲 generar código
-function generarCodigo() {
-  return Math.random().toString(36).substring(2, 6).toUpperCase();
-}
+// 🔥 CREAR
+window.crear = async () => {
+  try {
+    await set(ref(db, "test"), {
+      mensaje: "🔥 Firebase funcionando"
+    });
 
-// 🏁 crear sala + unirse automáticamente
-window.crearSala = async () => {
-  const nombre = document.getElementById("nombre").value || "PROFESOR";
-  const grupo = document.getElementById("grupo").value;
-
-  const code = generarCodigo();
-
-  document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
-
-  // crear sala
-  await set(ref(db, "salas/" + code), {
-    jugadores: {
-      0: null,
-      1: null,
-      2: null,
-      3: null
-    }
-  });
-
-  // 🔥 te unes automáticamente
-  await set(ref(db, `salas/${code}/jugadores/${grupo}`), {
-    nombre
-  });
-
-  document.getElementById("estado").innerText =
-    "Sala creada y unido como Grupo " + (parseInt(grupo) + 1);
+    document.getElementById("output").innerText = "Dato creado";
+  } catch (e) {
+    console.error(e);
+    document.getElementById("output").innerText = "Error creando";
+  }
 };
 
-// 👥 unirse manual
-window.unirse = async () => {
-  const nombre = document.getElementById("nombre").value;
-  const grupo = document.getElementById("grupo").value;
-  const code = document.getElementById("codigo").value.toUpperCase();
+// 🔥 LEER
+window.leer = async () => {
+  try {
+    const snap = await get(ref(db, "test"));
 
-  if (!nombre) return alert("Pon nombre");
-
-  const snap = await get(ref(db, "salas/" + code));
-
-  if (!snap.exists()) return alert("Sala no existe");
-
-  // 🔥 entra siempre
-  await set(ref(db, `salas/${code}/jugadores/${grupo}`), {
-    nombre
-  });
-
-  document.getElementById("estado").innerText =
-    "Te uniste al Grupo " + (parseInt(grupo) + 1);
+    if (snap.exists()) {
+      document.getElementById("output").innerText =
+        snap.val().mensaje;
+    } else {
+      document.getElementById("output").innerText =
+        "No existe dato";
+    }
+  } catch (e) {
+    console.error(e);
+    document.getElementById("output").innerText = "Error leyendo";
+  }
 };
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
