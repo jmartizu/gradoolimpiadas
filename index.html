@@ -2,31 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Olimpiadas Gradoolímpicas</title>
+<title>🐪 Olimpiadas Gradoolímpicas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{font-family:Arial;background:#fde68a;margin:0}
+body{font-family:Arial;background:linear-gradient(#fde68a,#f59e0b);margin:0}
 .container{max-width:1000px;margin:auto;padding:20px}
-.card{background:white;padding:20px;border-radius:16px;margin-bottom:20px}
-button{padding:10px;border:none;border-radius:10px;margin:5px;cursor:pointer}
+.card{background:white;padding:20px;border-radius:16px;margin-bottom:20px;box-shadow:0 5px 15px rgba(0,0,0,0.2)}
+button{padding:10px;border:none;border-radius:10px;margin:5px;cursor:pointer;font-weight:bold}
 .primary{background:#2563eb;color:white}
 .success{background:#16a34a;color:white}
-.camel{font-size:30px;position:absolute;transition:0.3s}
-.track{position:relative;height:50px;background:#fcd34d;margin:10px;border-radius:10px}
-.finish{position:absolute;right:0;width:5px;height:100%;background:black}
+.modeBtn{background:#7c3aed;color:white}
+.track{position:relative;height:60px;background:#fde68a;margin:12px;border-radius:12px;border:2px dashed #b45309}
+.camel{position:absolute;top:10px;font-size:32px;transition:0.4s}
+.finish{position:absolute;right:0;width:10px;height:100%;background:repeating-linear-gradient(black 0 10px,white 10px 20px)}
+.laneLabel{position:absolute;left:5px;top:-18px;font-weight:bold}
 .hidden{display:none}
+h1{text-align:center}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<h1>🐪 Olimpiadas Gradoolímpicas</h1>
+<h1>🏁 🐪 Olimpiadas Gradoolímpicas</h1>
 
 <div class="card">
-<button class="primary" onclick="createRace()">Crear carrera</button>
-<p id="code"></p>
+<h3>Modo de juego</h3>
+<button class="modeBtn" onclick="setMode('team')">🐪 Equipos</button>
+<button class="modeBtn" onclick="setMode('solo')">👤 Individual</button>
+<p id="modeText">Modo actual: Equipos</p>
+</div>
+
+<div class="card">
+<button class="primary" onclick="createRace()">🚀 Crear carrera</button>
+<h2 id="code"></h2>
 </div>
 
 <div class="card">
@@ -44,21 +54,20 @@ button{padding:10px;border:none;border-radius:10px;margin:5px;cursor:pointer}
 
 <div class="card hidden" id="game">
 <h2 id="player"></h2>
-<div id="question"></div>
+<div id="question" style="font-size:22px;margin:10px"></div>
 <input id="answer" placeholder="respuesta">
 <button onclick="check()">Responder</button>
-<p id="result"></p>
+<p id="result" style="font-weight:bold"></p>
 </div>
 
 <div class="card">
-<h2>Carrera</h2>
+<h2>🏁 Carrera en vivo</h2>
 <div id="race"></div>
 </div>
 
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -69,8 +78,7 @@ const firebaseConfig = {
   projectId: "olimpiadas-gradoolimpicas",
   storageBucket: "olimpiadas-gradoolimpicas.firebasestorage.app",
   messagingSenderId: "774721061799",
-  appId: "1:774721061799:web:34ad8e40a90d7322936c82",
-  measurementId: "G-S526TMJ2YJ"
+  appId: "1:774721061799:web:34ad8e40a90d7322936c82"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -78,7 +86,14 @@ const db = getFirestore(app);
 
 let roomId="";
 let team="";
+let name="";
 let exercise;
+let gameMode="team";
+
+function setMode(mode){
+ gameMode=mode;
+ document.getElementById("modeText").innerText="Modo actual: "+(mode==="team"?"Equipos":"Individual");
+}
 
 function randomCode(){
  return Math.random().toString(36).substring(2,7).toUpperCase();
@@ -87,9 +102,10 @@ function randomCode(){
 window.createRace = async ()=>{
  roomId=randomCode();
  await setDoc(doc(db,"races",roomId),{
+  mode:gameMode,
   positions:{A:0,B:0,C:0,D:0,E:0},
-  goal:15,
-  status:"live"
+  players:{},
+  goal:15
  });
  document.getElementById("code").innerText="Código: "+roomId;
  listen(roomId);
@@ -98,8 +114,20 @@ window.createRace = async ()=>{
 window.join = async ()=>{
  roomId=document.getElementById("room").value.toUpperCase();
  team=document.getElementById("team").value;
- document.getElementById("player").innerText="Equipo "+team;
+ name=document.getElementById("name").value;
+ document.getElementById("player").innerText=name;
  document.getElementById("game").classList.remove("hidden");
+
+ let ref=doc(db,"races",roomId);
+ let snap=await getDoc(ref);
+ let data=snap.data();
+
+ if(data.mode==="solo"){
+  let players=data.players||{};
+  players[name]=0;
+  await updateDoc(ref,{players});
+ }
+
  listen(roomId);
  newQ();
 }
@@ -107,22 +135,35 @@ window.join = async ()=>{
 function listen(id){
  onSnapshot(doc(db,"races",id),(snap)=>{
   let data=snap.data();
-  draw(data.positions,data.goal);
+  if(data) draw(data);
  });
 }
 
-function draw(pos,goal){
+function draw(data){
  let html="";
- for(let t of ["A","B","C","D","E"]){
-  let p=pos[t]||0;
-  let left=(p/goal)*90;
-  html+=`
-  <div class="track">
-    <div class="camel" style="left:${left}%">🐪</div>
-    <div class="finish"></div>
-    <span>Grupo ${t}: ${p}</span>
-  </div>`;
+ const camels=["🐪","🐫","🐪","🐫","🐪"];
+
+ if(data.mode==="team"){
+  for(let t of ["A","B","C","D","E"]){
+   let p=data.positions[t]||0;
+   let left=(p/data.goal)*85;
+   html+=`<div class="track">
+   <div class="laneLabel">Grupo ${t}</div>
+   <div class="camel" style="left:${left}%">🐪</div>
+   <div class="finish"></div></div>`;
+  }
+ }else{
+  let entries=Object.entries(data.players||{});
+  entries.sort((a,b)=>b[1]-a[1]);
+  entries.slice(0,10).forEach((p,i)=>{
+   let left=(p[1]/data.goal)*85;
+   html+=`<div class="track">
+   <div class="laneLabel">${p[0]}</div>
+   <div class="camel" style="left:${left}%">🐪</div>
+   <div class="finish"></div></div>`;
+  });
  }
+
  document.getElementById("race").innerHTML=html;
 }
 
@@ -138,21 +179,23 @@ window.check = async ()=>{
  let user=parseInt(document.getElementById("answer").value);
  let ref=doc(db,"races",roomId);
  let snap=await getDoc(ref);
- let pos=snap.data().positions;
+ let data=snap.data();
 
- if(user===exercise.sol){
-  pos[team]++;
-  document.getElementById("result").innerText="✅ Correcto";
+ if(data.mode==="team"){
+  let pos=data.positions;
+  pos[team]= user===exercise.sol ? pos[team]+1 : Math.max(0,pos[team]-1);
+  await updateDoc(ref,{positions:pos});
  }else{
-  pos[team]=Math.max(0,pos[team]-1);
-  document.getElementById("result").innerText="❌ Incorrecto";
+  let players=data.players;
+  players[name]= user===exercise.sol ? players[name]+1 : Math.max(0,players[name]-1);
+  await updateDoc(ref,{players});
  }
 
- await updateDoc(ref,{positions:pos});
+ document.getElementById("result").innerText=user===exercise.sol?"✅":"❌";
  newQ();
 }
 
 </script>
-
 </body>
 </html>
+
