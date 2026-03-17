@@ -207,32 +207,47 @@ function iniciarTimer(){
   },1000);
 }
 
-// 🎯 responder
+// 🎯 responder (FIX FINAL)
 function responder(){
   if(respondido)return;
   respondido=true;
 
-  const val=document.getElementById("respuesta").value;
+  const input=document.getElementById("respuesta");
+  const val=input.value.trim();
 
-  db.ref("salas/"+sala).once("value",snap=>{
+  if(val==="")return;
+
+  const salaRef=db.ref("salas/"+sala);
+
+  salaRef.once("value").then(snap=>{
     const data=snap.val();
-    if(data.ganador!==null)return;
+    if(!data||data.ganador!==null)return;
 
     let correcto=val==data.pregunta.respuesta;
 
+    // ✅ mostrar resultado
     document.getElementById("resultado").innerText=
-      correcto ? "✅ Correcto" : "❌ Incorrecto";
+      correcto?"✅ Correcto":"❌ Incorrecto";
 
     let pos=data.jugadores[grupo].pos;
     pos=correcto?pos+1:pos-1;
 
     if(pos>=META){
-      db.ref("salas/"+sala).update({ganador:grupo});
+      salaRef.update({ganador:grupo});
     }
 
-    db.ref(`salas/${sala}/jugadores/${grupo}`).update({pos});
+    salaRef.child("jugadores/"+grupo).update({pos});
 
-    cambiarPregunta();
+    // limpiar input
+    input.value="";
+
+    // 🔥 nueva pregunta SIEMPRE
+    setTimeout(()=>{
+      salaRef.update({
+        pregunta:nuevaPregunta()
+      });
+      iniciarTimer();
+    },500);
   });
 }
 
@@ -247,8 +262,4 @@ function cambiarPregunta(){
 
 </body>
 </html>
-
-
-
-
 
