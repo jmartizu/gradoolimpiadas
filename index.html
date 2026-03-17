@@ -134,10 +134,9 @@ let META=20;
 let tiempo=40, intervalo, respondido=false;
 let preguntaActual=null;
 
-// 🎮 modo
+// modo
 function iniciarModo(m){
   modo=m;
-
   document.getElementById("menu").classList.remove("activa");
   document.getElementById("juego").classList.add("activa");
 
@@ -177,7 +176,7 @@ function nuevaPregunta(){
   }
 }
 
-// crear
+// crear sala
 function crearSala(){
   if(sala !== null) return;
 
@@ -260,7 +259,7 @@ function iniciarTimer(){
   },1000);
 }
 
-// responder
+// responder (CON RETROCESO CONTROLADO)
 function responder(){
   const val=document.getElementById("respuesta").value.trim();
   if(val===""||respondido)return;
@@ -275,7 +274,12 @@ function responder(){
     let d=snap.val();
     let pos=d.jugadores[grupo].pos;
 
-    if(correcto) pos++;
+    if(correcto){
+      pos++;
+    }else{
+      pos--;
+      if(pos < 0) pos = 0;
+    }
 
     if(pos>=META){
       db.ref("salas/"+sala).update({
@@ -299,7 +303,7 @@ function ordenar(j){
     .map(e=>e[0]);
 }
 
-// puntos GLOBAL (todos los modos suman)
+// puntos global
 function asignarPuntos(j){
   let orden=ordenar(j);
   let pts=[5,3,1];
@@ -324,7 +328,7 @@ function mostrarGanador(){
   });
 }
 
-// ranking global
+// ranking
 function escucharRanking(){
   db.ref("ranking").on("value",snap=>{
     let r=snap.val()||{};
@@ -344,6 +348,8 @@ document.getElementById("respuesta").addEventListener("keypress",e=>{
 
 </body>
 </html>
+
+
 
 
 
