@@ -1,9 +1,8 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Camellos - Sala</title>
+<title>🐪 Carrera de Camellos</title>
 
 <style>
 body {
@@ -11,7 +10,7 @@ body {
   background: #111;
   color: white;
   text-align: center;
-  padding: 30px;
+  padding: 20px;
 }
 
 input, button, select {
@@ -20,15 +19,34 @@ input, button, select {
 }
 
 #codigoSala {
-  font-size: 30px;
+  font-size: 28px;
   color: yellow;
 }
+
+#pista {
+  margin: 20px;
+  height: 200px;
+  border: 2px solid white;
+  position: relative;
+}
+
+.camello {
+  position: absolute;
+  left: 0;
+  font-size: 30px;
+  transition: transform 0.3s;
+}
+
+#c0 { top: 10px; }
+#c1 { top: 60px; }
+#c2 { top: 110px; }
+#c3 { top: 160px; }
 </style>
 </head>
 
 <body>
 
-<h1>🐪 Sala de juego</h1>
+<h1>🐪 Carrera de Camellos</h1>
 
 <input id="nombre" placeholder="Tu nombre">
 
@@ -47,18 +65,24 @@ input, button, select {
 
 <hr>
 
-<h2>Unirse</h2>
-
 <input id="codigo" placeholder="Código">
 <button onclick="unirse()">Unirse</button>
 
-<div id="estado"></div>
+<br><br>
+
+<button onclick="avanzar()">🐪 Avanzar</button>
+
+<div id="pista">
+  <div class="camello" id="c0">🐪</div>
+  <div class="camello" id="c1">🐪</div>
+  <div class="camello" id="c2">🐪</div>
+  <div class="camello" id="c3">🐪</div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-// 🔥 TU FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyAgA1B1liq0K6pHn1HqpQ8hXZbxVgqrEt4",
   authDomain: "camellos-dcf0d.firebaseapp.com",
@@ -69,59 +93,86 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+let sala = null;
+let grupo = null;
+
 // 🎲 código
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-// 🏁 crear sala
+// 🏁 crear
 function crearSala() {
   const nombre = document.getElementById("nombre").value || "PROFESOR";
-  const grupo = document.getElementById("grupo").value;
+  grupo = document.getElementById("grupo").value;
 
   const code = generarCodigo();
+  sala = code;
 
   document.getElementById("codigoSala").innerText = "CÓDIGO: " + code;
 
   db.ref("salas/" + code).set({
     jugadores: {
-      0: null,
-      1: null,
-      2: null,
-      3: null
+      0: { nombre: "", pos: 0 },
+      1: { nombre: "", pos: 0 },
+      2: { nombre: "", pos: 0 },
+      3: { nombre: "", pos: 0 }
     }
   });
 
-  // 🔥 se une automáticamente
-  db.ref("salas/" + code + "/jugadores/" + grupo).set({
-    nombre
+  db.ref(`salas/${code}/jugadores/${grupo}`).set({
+    nombre,
+    pos: 0
   });
 
-  document.getElementById("estado").innerText =
-    "Sala creada y unido como Grupo " + (parseInt(grupo) + 1);
+  escuchar();
 }
 
 // 👥 unirse
 function unirse() {
   const nombre = document.getElementById("nombre").value;
-  const grupo = document.getElementById("grupo").value;
+  grupo = document.getElementById("grupo").value;
   const code = document.getElementById("codigo").value.toUpperCase();
 
-  if (!nombre) return alert("Pon nombre");
+  sala = code;
 
-  db.ref("salas/" + code).once("value", (snap) => {
-    if (!snap.exists()) {
-      alert("Sala no existe");
-      return;
-    }
+  db.ref("salas/" + code).once("value", snap => {
+    if (!snap.exists()) return alert("Sala no existe");
 
-    // 🔥 entra siempre (sin bug)
-    db.ref("salas/" + code + "/jugadores/" + grupo).set({
-      nombre
+    db.ref(`salas/${code}/jugadores/${grupo}`).set({
+      nombre,
+      pos: 0
     });
 
-    document.getElementById("estado").innerText =
-      "Te uniste al Grupo " + (parseInt(grupo) + 1);
+    escuchar();
+  });
+}
+
+// 👂 escuchar cambios
+function escuchar() {
+  db.ref("salas/" + sala).on("value", snap => {
+    const data = snap.val();
+    if (!data) return;
+
+    for (let i = 0; i < 4; i++) {
+      const jugador = data.jugadores[i];
+      const pos = jugador?.pos || 0;
+
+      document.getElementById("c" + i).style.transform =
+        `translateX(${pos * 10}px)`;
+    }
+  });
+}
+
+// 🐪 avanzar
+function avanzar() {
+  const refJugador = db.ref(`salas/${sala}/jugadores/${grupo}`);
+
+  refJugador.once("value", snap => {
+    const data = snap.val();
+    const nuevaPos = (data.pos || 0) + 1;
+
+    refJugador.update({ pos: nuevaPos });
   });
 }
 </script>
