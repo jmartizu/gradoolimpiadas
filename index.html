@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>🐪 Carrera Final PRO</title>
+<title>🐪 Carrera Camellos PRO</title>
 
 <style>
 body {
@@ -17,14 +17,22 @@ body {
   border: 2px solid white;
   margin: 20px;
   position: relative;
+  overflow: hidden;
 }
 
+/* 🏁 META REAL */
 .meta {
   position: absolute;
   right: 0;
-  width: 5px;
+  width: 20px;
   height: 100%;
-  background: red;
+  background: repeating-linear-gradient(
+    0deg,
+    white 0px,
+    white 10px,
+    black 10px,
+    black 20px
+  );
 }
 
 .camello {
@@ -41,13 +49,17 @@ body {
 
 #pregunta {
   font-size: 22px;
-  margin: 10px;
   color: yellow;
 }
 
 #timer {
   font-size: 20px;
   color: cyan;
+}
+
+#resultado {
+  font-size: 20px;
+  margin: 10px;
 }
 </style>
 </head>
@@ -76,6 +88,7 @@ body {
 
 <h2 id="pregunta">Esperando...</h2>
 <h3 id="timer"></h3>
+<h3 id="resultado"></h3>
 
 <input id="respuesta" placeholder="Respuesta">
 <button onclick="responder()">Responder</button>
@@ -109,40 +122,31 @@ let grupo=null;
 let META=50;
 let tiempo=20;
 let intervalo=null;
+let respondido=false;
 
 // 🎲 código
 function generarCodigo(){
   return Math.random().toString(36).substring(2,6).toUpperCase();
 }
 
-// 🧠 preguntas
+// 🧠 preguntas (SOLO 2 TIPOS)
 function nuevaPregunta(){
-  let tipo=Math.floor(Math.random()*3);
+  let tipo=Math.floor(Math.random()*2);
+
+  let g=Math.floor(Math.random()*50);
+  let m=Math.floor(Math.random()*60);
 
   if(tipo==0){
-    let g=Math.floor(Math.random()*50);
-    let m=Math.floor(Math.random()*60);
     return{
       texto:`${g}° ${m}' → minutos`,
       respuesta:(g*60+m).toString()
     };
-  }
-
-  if(tipo==1){
-    let g=Math.floor(Math.random()*50);
-    let m=Math.floor(Math.random()*60);
+  }else{
     return{
       texto:`${g}° ${m}' → grados`,
       respuesta:(g+m/60).toFixed(2)
     };
   }
-
-  let val=(Math.random()*50).toFixed(2);
-  let min=Math.round((val%1)*60);
-  return{
-    texto:`${val}° → grados minutos`,
-    respuesta:`${Math.floor(val)} ${min}`
-  };
 }
 
 // 🏁 crear
@@ -202,11 +206,11 @@ function escuchar(){
 function iniciarTimer(){
   clearInterval(intervalo);
   tiempo=20;
+  respondido=false;
+  document.getElementById("resultado").innerText="";
 
   intervalo=setInterval(()=>{
-    document.getElementById("timer").innerText=
-      "Tiempo: "+tiempo;
-
+    document.getElementById("timer").innerText="Tiempo: "+tiempo;
     tiempo--;
 
     if(tiempo<0){
@@ -217,6 +221,9 @@ function iniciarTimer(){
 
 // 🎯 responder
 function responder(){
+  if(respondido)return;
+  respondido=true;
+
   const val=document.getElementById("respuesta").value;
 
   db.ref("salas/"+sala).once("value",snap=>{
@@ -224,6 +231,9 @@ function responder(){
     if(data.ganador!==null)return;
 
     let correcto=val==data.pregunta.respuesta;
+
+    document.getElementById("resultado").innerText=
+      correcto ? "✅ Correcto" : "❌ Incorrecto";
 
     let pos=data.jugadores[grupo].pos;
     pos=correcto?pos+1:pos-1;
@@ -238,7 +248,7 @@ function responder(){
   });
 }
 
-// 🔁 nueva pregunta SIEMPRE
+// 🔁 cambiar pregunta
 function cambiarPregunta(){
   db.ref("salas/"+sala).update({
     pregunta:nuevaPregunta()
