@@ -84,88 +84,6 @@ button:disabled {
 <button onclick="unirse()">Unirse</button>
 
 <h3 id="mensajeUnion"></h3>
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>🎮 Juegos de Carrera</title>
-
-<style>
-body { font-family: Arial; background:#111; color:white; text-align:center; }
-
-.pantalla { display:none; }
-.activa { display:block; }
-
-#pista {
-  width:90%;
-  height:260px;
-  margin:20px auto;
-  border:2px solid white;
-  position:relative;
-}
-
-.meta {
-  position:absolute;
-  right:0;
-  width:20px;
-  height:100%;
-  background: repeating-linear-gradient(
-    0deg, white 0px, white 10px, black 10px, black 20px
-  );
-}
-
-.personaje {
-  position:absolute;
-  font-size:32px;
-  transition:0.4s linear;
-}
-
-#c0 { top:10%; }
-#c1 { top:35%; }
-#c2 { top:60%; }
-#c3 { top:85%; }
-
-#mensajeUnion {
-  margin-top:10px;
-  font-size:18px;
-  color: lightgreen;
-}
-</style>
-</head>
-
-<body>
-
-<div id="menu" class="pantalla activa">
-  <h1>🎮 Selecciona juego</h1>
-  <button onclick="iniciarModo('camellos')">🐪 Camellos</button>
-  <button onclick="iniciarModo('atletismo')">🏃 Atletismo</button>
-  <button onclick="iniciarModo('caballos')">🐎 Caballos</button>
-</div>
-
-<div id="juego" class="pantalla">
-
-<h1 id="titulo"></h1>
-
-<input id="nombre" placeholder="Nombre">
-<select id="grupo">
-  <option value="0">Grupo 1</option>
-  <option value="1">Grupo 2</option>
-  <option value="2">Grupo 3</option>
-  <option value="3">Grupo 4</option>
-</select>
-
-<br>
-
-<button id="btnCrear" onclick="crearSala()">Crear sala</button>
-<div id="codigoSala"></div>
-
-<hr>
-
-<input id="codigo" placeholder="Código">
-<button onclick="unirse()">Unirse</button>
-
-<h3 id="mensajeUnion"></h3>
 
 <br><br>
 
@@ -175,7 +93,7 @@ body { font-family: Arial; background:#111; color:white; text-align:center; }
 <h3 id="timer"></h3>
 <h3 id="resultado"></h3>
 
-<input id="respuesta" placeholder="Respuesta">
+<input id="respuesta" placeholder="Ej: 57 26 o 15.75">
 <button onclick="responder()">Responder</button>
 
 <h2 id="ganador"></h2>
@@ -222,12 +140,15 @@ function iniciarModo(m){
   if(m==="camellos"){
     document.getElementById("titulo").innerText="🐪 Carrera de Camellos";
     poner("🐫➡️");
+    document.getElementById("pista").style.background="#222";
   } else if(m==="atletismo"){
-    document.getElementById("titulo").innerText="🏃 Atletismo";
+    document.getElementById("titulo").innerText="🏃 Carrera de Atletismo";
     poner("🏃‍♂️➡️");
+    document.getElementById("pista").style.background="#8B4513";
   } else {
-    document.getElementById("titulo").innerText="🐎 Caballos";
+    document.getElementById("titulo").innerText="🐎 Carrera de Caballos";
     poner("🐎➡️");
+    document.getElementById("pista").style.background="#3a3a3a";
   }
 }
 
@@ -260,7 +181,7 @@ function nuevaPregunta(){
     };
   }
 
-  // ⭐ decimal → grados minutos
+  // 🔥 decimal → grados minutos
   let decimal=(Math.random()*360).toFixed(2);
   let grados=Math.floor(decimal);
   let minutos=Math.round((decimal-grados)*60);
@@ -272,7 +193,7 @@ function nuevaPregunta(){
   };
 }
 
-// resto igual excepto responder
+// resto igual hasta responder
 
 function responder(){
   let val=document.getElementById("respuesta").value.trim();
@@ -285,7 +206,7 @@ function responder(){
   let solucion="";
 
   if(preguntaActual.tipo==="minutos"){
-    correcto = Number(val)===preguntaActual.respuesta;
+    correcto = Number(val) === preguntaActual.respuesta;
     solucion=preguntaActual.respuesta;
   }
   else if(preguntaActual.tipo==="grados"){
@@ -325,6 +246,8 @@ function responder(){
 
 </body>
 </html>
+
+
 
 
 
